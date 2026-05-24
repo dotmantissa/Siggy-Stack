@@ -1,12 +1,19 @@
 import { useCallback, useEffect, useState } from "react";
-import { initialBoard, isGameOver, move, spawnRandomTile, type Direction } from "@/lib/game";
+import {
+  initialBoard,
+  isGameOver,
+  move,
+  spawnRandomTile,
+  type Board as BoardType,
+  type Direction,
+} from "@/lib/game";
 import { Board } from "./Board";
 import { Score } from "./Score";
 
 const BEST_KEY = "coin-merge-best";
 
 export function CoinMergeGame() {
-  const [board, setBoard] = useState(initialBoard);
+  const [board, setBoard] = useState<BoardType>(() => initialBoard());
   const [score, setScore] = useState(0);
   const [best, setBest] = useState<number>(() => {
     if (typeof window === "undefined") return 0;
@@ -14,6 +21,7 @@ export function CoinMergeGame() {
   });
   const [gameOver, setGameOver] = useState(false);
 
+  // Restart fully resets board, score, and game-over state.
   const restart = useCallback(() => {
     setBoard(initialBoard());
     setScore(0);
@@ -25,8 +33,13 @@ export function CoinMergeGame() {
       if (gameOver) return;
       setBoard((prev) => {
         const { board: next, gained, moved } = move(prev, dir);
+        // No tile shifted or merged → ignore the input entirely.
+        // (Crucially: do NOT spawn a new tile on a no-op move.)
         if (!moved) return prev;
+
+        // Exactly one new DOGE per valid move.
         const withSpawn = spawnRandomTile(next);
+
         if (gained > 0) {
           setScore((s) => {
             const ns = s + gained;
@@ -41,6 +54,7 @@ export function CoinMergeGame() {
             return ns;
           });
         }
+
         if (isGameOver(withSpawn)) setGameOver(true);
         return withSpawn;
       });
@@ -48,7 +62,7 @@ export function CoinMergeGame() {
     [gameOver],
   );
 
-  // Prevent page from scrolling on arrow keys while playing.
+  // Prevent the page from scrolling on arrow keys while playing.
   useEffect(() => {
     const prevent = (e: KeyboardEvent) => {
       if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key))
@@ -63,7 +77,9 @@ export function CoinMergeGame() {
       <header className="game-header">
         <div>
           <h1 className="game-title">Coin Merge</h1>
-          <p className="game-tagline">Swipe to merge coins. DOGE all the way to LEGENDARY.</p>
+          <p className="game-tagline">
+            Swipe to merge coins. DOGE all the way to LEGENDARY.
+          </p>
         </div>
         <Score score={score} best={best} />
       </header>

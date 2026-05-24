@@ -7,15 +7,16 @@ interface Props {
   onMove: (dir: Direction) => void;
 }
 
-// Renders the 4x4 grid + absolutely positioned tiles, and hooks up
-// keyboard arrows + touch swipes.
+// Renders the 4x4 grid + absolutely positioned tiles. Handles keyboard
+// arrows on desktop and touch swipes on mobile.
 export function Board({ board, onMove }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [cellSize, setCellSize] = useState(72);
   const gap = 10;
   const padding = 10;
 
-  // Recalculate cell size from container width for responsive layout.
+  // Recalculate cell size from container width so the board scales
+  // fluidly on any device.
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -38,6 +39,10 @@ export function Board({ board, onMove }: Props) {
         ArrowDown: "down",
         ArrowLeft: "left",
         ArrowRight: "right",
+        w: "up",
+        s: "down",
+        a: "left",
+        d: "right",
       };
       const dir = map[e.key];
       if (dir) {
@@ -49,24 +54,32 @@ export function Board({ board, onMove }: Props) {
     return () => window.removeEventListener("keydown", handler);
   }, [onMove]);
 
-  // Touch swipe controls.
-  const touchStart = useRef<{ x: number; y: number } | null>(null);
+  // Touch swipe controls — fires as soon as a swipe passes the threshold,
+  // so the move feels instant and a single drag can't trigger two moves.
+  const touchStart = useRef<{ x: number; y: number; fired: boolean } | null>(null);
+  const SWIPE_THRESHOLD = 22; // px — small enough to feel snappy on phones
+
   const onTouchStart = (e: React.TouchEvent) => {
     const t = e.touches[0];
-    touchStart.current = { x: t.clientX, y: t.clientY };
+    touchStart.current = { x: t.clientX, y: t.clientY, fired: false };
   };
-  const onTouchEnd = (e: React.TouchEvent) => {
+  const onTouchMove = (e: React.TouchEvent) => {
     const start = touchStart.current;
-    if (!start) return;
-    const t = e.changedTouches[0];
+    if (!start || start.fired) return;
+    // touch-action: none on the board already prevents scroll; this
+    // preventDefault is a belt-and-braces for older mobile browsers.
+    if (e.cancelable) e.preventDefault();
+    const t = e.touches[0];
     const dx = t.clientX - start.x;
     const dy = t.clientY - start.y;
     const absX = Math.abs(dx);
     const absY = Math.abs(dy);
-    const threshold = 24;
-    if (Math.max(absX, absY) < threshold) return;
+    if (Math.max(absX, absY) < SWIPE_THRESHOLD) return;
+    start.fired = true;
     if (absX > absY) onMove(dx > 0 ? "right" : "left");
     else onMove(dy > 0 ? "down" : "up");
+  };
+  const onTouchEnd = () => {
     touchStart.current = null;
   };
 
@@ -79,7 +92,9 @@ export function Board({ board, onMove }: Props) {
       className="coin-board"
       style={{ height: boardPx, padding }}
       onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
+      onTouchCancel={onTouchEnd}
     >
       {/* Background cells */}
       <div
@@ -95,7 +110,7 @@ export function Board({ board, onMove }: Props) {
         ))}
       </div>
 
-      {/* Absolutely positioned tiles for smooth movement */}
+      {/* Absolutely positioned tiles slide via CSS transitions. */}
       <div className="coin-board__tiles" style={{ top: padding, left: padding }}>
         {tiles.map((tile) => (
           <Tile key={tile.id} tile={tile} cellSize={cellSize} gap={gap} />
