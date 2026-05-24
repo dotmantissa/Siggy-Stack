@@ -1,6 +1,8 @@
 // Core 2048-style game logic for Coin Merge.
+//
 // Board is a 4x4 grid of Tile | null. Each Tile has a unique id so the UI
-// can animate movement; `mergedFrom` lets the UI know a tile just merged.
+// can animate movement smoothly. Flags `mergedFrom` and `isNew` are only
+// set for the move that produced them, then cleared on the next move.
 
 export const SIZE = 4;
 
@@ -10,15 +12,19 @@ export type Coin = (typeof COINS)[number];
 
 export type Tile = {
   id: number;
-  tier: number; // 0..5
+  tier: number; // 0..COINS.length-1
   row: number;
   col: number;
-  mergedFrom?: [number, number]; // ids of tiles that produced this one
+  // Set on the move where this tile was just produced by a merge.
+  // Carries the ids of the two source tiles so the UI can animate them.
+  mergedFrom?: [number, number];
+  // True only on the move where this tile spawned.
   isNew?: boolean;
 };
 
 export type Board = (Tile | null)[][];
 
+// Unique tile id generator. IDs are critical for React keys + animations.
 let nextId = 1;
 const newId = () => nextId++;
 
@@ -38,6 +44,7 @@ export function spawnRandomTile(board: Board): Board {
   return next;
 }
 
+// Always start with exactly two DOGE tiles.
 export function initialBoard(): Board {
   let b = emptyBoard();
   b = spawnRandomTile(b);
@@ -47,27 +54,43 @@ export function initialBoard(): Board {
 
 export type Direction = "up" | "down" | "left" | "right";
 
-// Move/merge a single row to the left. Returns new row + score gained.
-// Pure function on an array of Tile|null.
-function slideRowLeft(row: (Tile | null)[]): { row: (Tile | null)[]; gained: number; moved: boolean } {
-  const tiles = row.filter((t): t is Tile => t !== null);
+// Deep-clone a tile while clearing per-move flags. We do this before any
+// move so previous-turn animations don't leak into the next render.
+function cloneTile(t: Tile): Tile {
+  return { id: t.id, tier: t.tier, row: t.row, col: t.col };
+}
+
+// Slide + merge one row to the left (classic 2048 semantics):
+// - Tiles slide as far left as possible.
+// - Each tile can participate in at most one merge per move.
+// - Merges resolve left-to-right.
+function slideRowLeft(row: (Tile | null)[]): {
+  row: (Tile | null)[];
+  gained: number;
+  moved: boolean;
+} {
+  // Compact (drop nulls) — every remaining tile is a fresh clone with
+  // no stale `mergedFrom` / `isNew` flags.
+  const tiles: Tile[] = row.filter((t): t is Tile => t !== null).map(cloneTile);
+
   const result: (Tile | null)[] = [];
   let gained = 0;
   let i = 0;
   while (i < tiles.length) {
     const a = tiles[i];
     const b = tiles[i + 1];
-    // Merge only if same tier AND not already LEGENDARY (max tier).
+    // Merge only if same tier AND not already at the max tier.
+    // i += 2 guarantees each tile merges at most once per move.
     if (b && a.tier === b.tier && a.tier < COINS.length - 1) {
       const mergedTier = a.tier + 1;
       result.push({
         id: newId(),
         tier: mergedTier,
-        row: a.row, // placeholder — caller fixes coords
+        row: a.row, // caller fixes row/col after un-rotation
         col: a.col,
         mergedFrom: [a.id, b.id],
       });
-      // Score = value of resulting tier (powers of 2 style).
+      // Score uses the classic 2048 progression (2,4,8,...).
       gained += Math.pow(2, mergedTier + 1);
       i += 2;
     } else {
@@ -77,7 +100,7 @@ function slideRowLeft(row: (Tile | null)[]): { row: (Tile | null)[]; gained: num
   }
   while (result.length < SIZE) result.push(null);
 
-  // Detect any change vs. original positions.
+  // A move counts as "moved" if any cell's tile id changed (slide or merge).
   let moved = false;
   for (let c = 0; c < SIZE; c++) {
     const before = row[c];
@@ -90,7 +113,7 @@ function slideRowLeft(row: (Tile | null)[]): { row: (Tile | null)[]; gained: num
   return { row: result, gained, moved };
 }
 
-// Rotate board so any move reduces to "left".
+// Rotate helpers let us reduce every direction to "slide left".
 function rotateCW(board: Board): Board {
   const out = emptyBoard();
   for (let r = 0; r < SIZE; r++)
@@ -104,13 +127,15 @@ function rotateCCW(board: Board): Board {
   return out;
 }
 
-export function move(board: Board, dir: Direction): { board: Board; gained: number; moved: boolean } {
+export function move(
+  board: Board,
+  dir: Direction,
+): { board: Board; gained: number; moved: boolean } {
   // Normalize so we always slide left.
   let work = board;
   if (dir === "up") work = rotateCCW(board);
   else if (dir === "down") work = rotateCW(board);
-  else if (dir === "right")
-    work = board.map((row) => row.slice().reverse());
+  else if (dir === "right") work = board.map((row) => row.slice().reverse());
 
   let totalGained = 0;
   let anyMoved = false;
@@ -121,20 +146,19 @@ export function move(board: Board, dir: Direction): { board: Board; gained: numb
     return newRow;
   });
 
-  // Un-rotate back to original orientation.
+  // Un-rotate back to the original orientation.
   let final = slid;
   if (dir === "up") final = rotateCW(slid);
   else if (dir === "down") final = rotateCCW(slid);
   else if (dir === "right") final = slid.map((row) => row.slice().reverse());
 
-  // Fix tile row/col coordinates and clear stale flags.
+  // Fix tile row/col to match their final position.
   for (let r = 0; r < SIZE; r++) {
     for (let c = 0; c < SIZE; c++) {
       const t = final[r][c];
       if (t) {
         t.row = r;
         t.col = c;
-        t.isNew = false;
       }
     }
   }
@@ -142,15 +166,16 @@ export function move(board: Board, dir: Direction): { board: Board; gained: numb
   return { board: final, gained: totalGained, moved: anyMoved };
 }
 
-// Game over = board full AND no adjacent tiles share a tier.
+// Game over = board full AND no two adjacent tiles can still merge.
 export function isGameOver(board: Board): boolean {
   for (let r = 0; r < SIZE; r++)
     for (let c = 0; c < SIZE; c++) if (!board[r][c]) return false;
   for (let r = 0; r < SIZE; r++) {
     for (let c = 0; c < SIZE; c++) {
       const t = board[r][c]!;
-      if (c + 1 < SIZE && board[r][c + 1]!.tier === t.tier && t.tier < COINS.length - 1) return false;
-      if (r + 1 < SIZE && board[r + 1][c]!.tier === t.tier && t.tier < COINS.length - 1) return false;
+      if (t.tier >= COINS.length - 1) continue; // max tier can't merge
+      if (c + 1 < SIZE && board[r][c + 1]!.tier === t.tier) return false;
+      if (r + 1 < SIZE && board[r + 1][c]!.tier === t.tier) return false;
     }
   }
   return true;
