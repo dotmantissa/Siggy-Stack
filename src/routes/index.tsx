@@ -1,26 +1,24 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { CoinMergeGame } from "@/components/game/CoinMergeGame";
 
 export const Route = createFileRoute("/")({
   component: Index,
+  head: () => ({
+    meta: [
+      { title: "Coin Merge — Swipe to merge coins from DOGE to LEGENDARY" },
+      {
+        name: "description",
+        content:
+          "Coin Merge is a mobile-first 2048-style puzzle. Swipe to merge DOGE, PEPE, SOL, ETH, BTC and reach LEGENDARY.",
+      },
+    ],
+  }),
 });
 
-// IMPORTANT: Replace this placeholder. For sites with multiple pages (About, Services, Contact, etc.),
-// create separate route files (about.tsx, services.tsx, contact.tsx) — don't put all pages in this file.
-function PlaceholderIndex() {
-  return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
-  );
-}
-
 function Index() {
-  return <PlaceholderIndex />;
+  return (
+    <main className="game-page">
+      <CoinMergeGame />
+    </main>
+  );
 }
