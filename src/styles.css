@@ -146,86 +146,138 @@
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: 1rem;
+  padding: 1.25rem 1rem 2rem;
+  background:
+    radial-gradient(1100px 600px at 80% -10%, oklch(0.32 0.12 300 / 0.18), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, oklch(0.4 0.15 75 / 0.12), transparent 60%),
+    var(--background);
 }
 .game-shell {
   width: 100%;
-  max-width: 520px;
+  max-width: 460px;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1.1rem;
 }
 .game-header {
   display: flex;
   flex-direction: column;
+  gap: 0.9rem;
+}
+.game-header__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 1rem;
 }
+.game-eyebrow {
+  font-size: 0.65rem;
+  letter-spacing: 0.22em;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+}
 .game-title {
-  font-size: 2rem;
+  font-size: 2.1rem;
   font-weight: 800;
-  letter-spacing: -0.02em;
-  background: linear-gradient(135deg, var(--coin-btc), var(--coin-legendary-b));
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  margin-top: 0.15rem;
+  background: linear-gradient(135deg, var(--coin-btc) 0%, var(--coin-legendary-b) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
-.game-tagline {
-  font-size: 0.875rem;
-  color: var(--muted-foreground);
-  margin-top: 0.25rem;
-}
 
+.btn-icon {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: transform 240ms cubic-bezier(0.34, 1.56, 0.64, 1), background 140ms ease;
+}
+.btn-icon:hover { background: var(--accent); }
+.btn-icon:active { transform: rotate(-180deg) scale(0.92); }
+
+/* ---------- Score ---------- */
 .score-row {
   display: flex;
-  gap: 0.75rem;
+  gap: 0.6rem;
 }
 .score-card {
+  position: relative;
   flex: 1;
-  background: var(--card);
+  background: linear-gradient(180deg, oklch(0.26 0.03 270), oklch(0.22 0.025 270));
   border-radius: var(--radius);
-  padding: 0.625rem 1rem;
+  padding: 0.65rem 0.9rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   border: 1px solid var(--border);
+  overflow: hidden;
+  transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 220ms ease;
+}
+.score-card--pulse {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px -10px oklch(0.78 0.17 75 / 0.55);
 }
 .score-card__label {
-  font-size: 0.7rem;
-  letter-spacing: 0.12em;
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
   color: var(--muted-foreground);
+  font-weight: 600;
 }
 .score-card__value {
-  font-size: 1.5rem;
-  font-weight: 700;
+  font-size: 1.55rem;
+  font-weight: 800;
   color: var(--foreground);
   font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+.score-card__gain {
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--coin-btc);
+  animation: score-gain 850ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  pointer-events: none;
+}
+@keyframes score-gain {
+  0%   { opacity: 0; transform: translateY(8px); }
+  20%  { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-18px); }
 }
 
 /* ---------- Board ---------- */
-.game-board-wrap {
-  position: relative;
-}
+.game-board-wrap { position: relative; }
 .coin-board {
   position: relative;
   width: 100%;
-  background: var(--board-bg);
-  border-radius: calc(var(--radius) + 6px);
+  background: linear-gradient(180deg, oklch(0.26 0.03 270), oklch(0.21 0.025 270));
+  border-radius: calc(var(--radius) + 8px);
   touch-action: none;
   user-select: none;
   border: 1px solid var(--border);
+  box-shadow:
+    0 30px 60px -30px oklch(0 0 0 / 0.6),
+    inset 0 1px 0 oklch(1 0 0 / 0.04);
 }
-.coin-board__grid {
-  display: grid;
-  position: relative;
-}
+.coin-board__grid { display: grid; position: relative; }
 .coin-board__cell {
-  background: var(--cell-bg);
+  background: oklch(0.19 0.02 270);
   border-radius: var(--radius);
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.03);
 }
-.coin-board__tiles {
-  position: absolute;
-  inset: 0;
-}
+.coin-board__tiles { position: absolute; inset: 0; }
 
 /* ---------- Tiles ---------- */
 .coin-tile {
@@ -236,68 +288,157 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  font-size: clamp(0.7rem, 3.4vw, 1.05rem);
   color: var(--foreground);
-  /* Smooth slide. transform-only transition keeps it GPU-cheap. */
   transition: transform 130ms cubic-bezier(0.22, 1, 0.36, 1);
   will-change: transform;
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+.coin-tile__face {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border-radius: inherit;
+  z-index: 1;
+}
+.coin-tile__symbol {
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  text-shadow: 0 1px 0 oklch(0 0 0 / 0.25);
 }
 .coin-tile__label {
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  opacity: 0.85;
+  text-transform: uppercase;
+}
+.coin-tile__sheen {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    135deg,
+    oklch(1 0 0 / 0.22) 0%,
+    oklch(1 0 0 / 0) 45%,
+    oklch(1 0 0 / 0) 100%
+  );
   pointer-events: none;
-}
-/* Spawned tile: small pop-in. */
-.coin-tile--new {
-  animation: tile-spawn 180ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-/* Tile produced by a merge: satisfying punch. Runs after the slide. */
-.coin-tile--merged {
-  animation: tile-merge 220ms cubic-bezier(0.34, 1.56, 0.64, 1) 110ms both;
   z-index: 2;
+  opacity: 0.5;
+}
+
+.coin-tile--new {
+  animation: tile-spawn 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.coin-tile--merged {
+  animation: tile-merge 260ms cubic-bezier(0.34, 1.56, 0.64, 1) 110ms both;
+  z-index: 3;
 }
 @keyframes tile-spawn {
-  0% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0.4); }
+  0%   { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0.35); }
   100% { opacity: 1; transform: translate(var(--tx), var(--ty)) scale(1); }
 }
 @keyframes tile-merge {
   0%   { transform: translate(var(--tx), var(--ty)) scale(1); }
-  55%  { transform: translate(var(--tx), var(--ty)) scale(1.18); filter: brightness(1.3); }
+  45%  { transform: translate(var(--tx), var(--ty)) scale(1.22); filter: brightness(1.35); }
   100% { transform: translate(var(--tx), var(--ty)) scale(1); filter: brightness(1); }
 }
 
-.coin-tile--doge { background: var(--coin-doge); color: var(--coin-doge-fg); }
-.coin-tile--pepe { background: var(--coin-pepe); color: var(--coin-pepe-fg); }
-.coin-tile--sol  { background: var(--coin-sol);  color: var(--coin-sol-fg); }
-.coin-tile--eth  { background: var(--coin-eth);  color: var(--coin-eth-fg); }
-.coin-tile--btc  {
-  background: linear-gradient(135deg, oklch(0.82 0.15 80), var(--coin-btc));
+/* --- Tier visuals --- */
+.coin-tile--doge {
+  background: linear-gradient(180deg, oklch(0.58 0.02 270), oklch(0.48 0.02 270));
+  color: var(--coin-doge-fg);
+  box-shadow: 0 2px 0 oklch(0 0 0 / 0.25), inset 0 1px 0 oklch(1 0 0 / 0.08);
+}
+.coin-tile--pepe {
+  background: linear-gradient(180deg, oklch(0.7 0.2 145), oklch(0.55 0.18 145));
+  color: var(--coin-pepe-fg);
+  box-shadow:
+    0 2px 0 oklch(0 0 0 / 0.25),
+    0 4px 14px -6px oklch(0.62 0.18 145 / 0.55),
+    inset 0 1px 0 oklch(1 0 0 / 0.15);
+}
+.coin-tile--sol {
+  background: linear-gradient(135deg, oklch(0.62 0.25 300), oklch(0.45 0.22 285));
+  color: var(--coin-sol-fg);
+  box-shadow:
+    0 2px 0 oklch(0 0 0 / 0.3),
+    0 6px 20px -6px oklch(0.55 0.22 300 / 0.65),
+    inset 0 1px 0 oklch(1 0 0 / 0.18);
+}
+.coin-tile--eth {
+  background: linear-gradient(160deg, oklch(0.68 0.16 250), oklch(0.42 0.18 255));
+  color: var(--coin-eth-fg);
+  box-shadow:
+    0 2px 0 oklch(0 0 0 / 0.3),
+    0 8px 24px -8px oklch(0.55 0.2 250 / 0.7),
+    inset 0 1px 0 oklch(1 0 0 / 0.2);
+}
+.coin-tile--btc {
+  background: linear-gradient(135deg, oklch(0.88 0.16 85), oklch(0.7 0.18 70) 55%, oklch(0.55 0.16 60));
   color: var(--coin-btc-fg);
+  box-shadow:
+    0 2px 0 oklch(0 0 0 / 0.3),
+    0 10px 28px -8px oklch(0.78 0.17 75 / 0.7),
+    inset 0 1px 0 oklch(1 0 0 / 0.35);
+}
+.coin-tile--btc .coin-tile__sheen {
+  background: linear-gradient(
+    135deg,
+    oklch(1 0 0 / 0.45) 0%,
+    oklch(1 0 0 / 0) 50%,
+    oklch(1 0 0 / 0.15) 100%
+  );
 }
 .coin-tile--legendary {
   background: linear-gradient(135deg, var(--coin-legendary-a), var(--coin-legendary-b));
   color: oklch(0.15 0.02 280);
   box-shadow:
-    0 0 18px oklch(0.78 0.2 85 / 0.6),
-    0 0 36px oklch(0.65 0.25 320 / 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
-  animation: legendary-glow 2.2s ease-in-out infinite;
+    0 0 22px oklch(0.78 0.2 85 / 0.7),
+    0 0 48px oklch(0.65 0.25 320 / 0.55),
+    inset 0 1px 0 oklch(1 0 0 / 0.35);
+  animation: legendary-glow 2.4s ease-in-out infinite;
+}
+.coin-tile--legendary .coin-tile__face::before {
+  content: "";
+  position: absolute;
+  inset: -50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    oklch(1 0 0 / 0.18) 60deg,
+    transparent 120deg,
+    transparent 360deg
+  );
+  animation: legendary-shimmer 3.2s linear infinite;
+  z-index: 0;
+}
+.coin-tile--legendary .coin-tile__symbol,
+.coin-tile--legendary .coin-tile__label {
+  position: relative;
+  z-index: 1;
 }
 @keyframes legendary-glow {
   0%, 100% {
     box-shadow:
-      0 0 18px oklch(0.78 0.2 85 / 0.6),
-      0 0 36px oklch(0.65 0.25 320 / 0.5),
-      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      0 0 22px oklch(0.78 0.2 85 / 0.7),
+      0 0 48px oklch(0.65 0.25 320 / 0.55),
+      inset 0 1px 0 oklch(1 0 0 / 0.35);
   }
   50% {
     box-shadow:
-      0 0 28px oklch(0.78 0.2 85 / 0.85),
-      0 0 56px oklch(0.65 0.25 320 / 0.75),
-      inset 0 1px 0 rgba(255, 255, 255, 0.4);
+      0 0 34px oklch(0.78 0.2 85 / 0.95),
+      0 0 70px oklch(0.65 0.25 320 / 0.85),
+      inset 0 1px 0 oklch(1 0 0 / 0.45);
   }
+}
+@keyframes legendary-shimmer {
+  to { transform: rotate(360deg); }
 }
 
 /* ---------- Actions / overlay ---------- */
@@ -305,48 +446,65 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.55rem;
 }
 .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   background: linear-gradient(135deg, var(--coin-btc), var(--coin-legendary-b));
   color: oklch(0.15 0.02 280);
   font-weight: 700;
-  padding: 0.7rem 1.5rem;
-  border-radius: var(--radius);
+  padding: 0.8rem 1.6rem;
+  border-radius: 999px;
   border: none;
   cursor: pointer;
-  transition: transform 120ms ease, filter 120ms ease;
+  transition: transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1),
+              filter 140ms ease;
   font-size: 0.95rem;
+  box-shadow:
+    0 8px 22px -8px oklch(0.78 0.17 75 / 0.65),
+    inset 0 1px 0 oklch(1 0 0 / 0.3);
 }
-.btn-primary:hover { filter: brightness(1.08); }
-.btn-primary:active { transform: scale(0.97); }
+.btn-primary:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.btn-primary:active { transform: scale(0.96); }
 .game-help {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
   color: var(--muted-foreground);
+  text-transform: uppercase;
 }
 
 .game-over {
   position: absolute;
   inset: 0;
   background: oklch(0.15 0.02 270 / 0.78);
-  border-radius: calc(var(--radius) + 6px);
+  border-radius: calc(var(--radius) + 8px);
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(6px);
-  animation: tile-pop 200ms ease-out;
+  backdrop-filter: blur(8px);
+  animation: tile-spawn 220ms ease-out;
 }
 .game-over__inner {
   text-align: center;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.7rem;
   align-items: center;
+  padding: 1.5rem;
 }
 .game-over__title {
-  font-size: 1.75rem;
+  font-size: 1.9rem;
   font-weight: 800;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, var(--coin-btc), var(--coin-legendary-b));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 .game-over__score {
   color: var(--muted-foreground);
+  font-size: 0.95rem;
 }
+.game-over__score strong { color: var(--foreground); font-weight: 700; }

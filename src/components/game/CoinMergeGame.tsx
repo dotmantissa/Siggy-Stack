@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { RotateCcw } from "lucide-react";
 import {
   initialBoard,
   isGameOver,
@@ -21,7 +22,6 @@ export function CoinMergeGame() {
   });
   const [gameOver, setGameOver] = useState(false);
 
-  // Restart fully resets board, score, and game-over state.
   const restart = useCallback(() => {
     setBoard(initialBoard());
     setScore(0);
@@ -33,11 +33,8 @@ export function CoinMergeGame() {
       if (gameOver) return;
       setBoard((prev) => {
         const { board: next, gained, moved } = move(prev, dir);
-        // No tile shifted or merged → ignore the input entirely.
-        // (Crucially: do NOT spawn a new tile on a no-op move.)
         if (!moved) return prev;
 
-        // Exactly one new DOGE per valid move.
         const withSpawn = spawnRandomTile(next);
 
         if (gained > 0) {
@@ -62,7 +59,6 @@ export function CoinMergeGame() {
     [gameOver],
   );
 
-  // Prevent the page from scrolling on arrow keys while playing.
   useEffect(() => {
     const prevent = (e: KeyboardEvent) => {
       if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key))
@@ -75,11 +71,19 @@ export function CoinMergeGame() {
   return (
     <div className="game-shell">
       <header className="game-header">
-        <div>
-          <h1 className="game-title">Coin Merge</h1>
-          <p className="game-tagline">
-            Swipe to merge coins. DOGE all the way to LEGENDARY.
-          </p>
+        <div className="game-header__top">
+          <div>
+            <div className="game-eyebrow">CRYPTO · 2048</div>
+            <h1 className="game-title">Coin Merge</h1>
+          </div>
+          <button
+            className="btn-icon"
+            onClick={restart}
+            aria-label="Restart game"
+            title="Restart"
+          >
+            <RotateCcw size={18} />
+          </button>
         </div>
         <Score score={score} best={best} />
       </header>
@@ -90,8 +94,11 @@ export function CoinMergeGame() {
         {gameOver && (
           <div className="game-over">
             <div className="game-over__inner">
+              <div className="game-eyebrow">RUN ENDED</div>
               <h2 className="game-over__title">Game Over</h2>
-              <p className="game-over__score">Final score: {score}</p>
+              <p className="game-over__score">
+                Final score <strong>{score}</strong>
+              </p>
               <button className="btn-primary" onClick={restart}>
                 Play again
               </button>
@@ -102,9 +109,10 @@ export function CoinMergeGame() {
 
       <div className="game-actions">
         <button className="btn-primary" onClick={restart}>
+          <RotateCcw size={16} />
           Restart
         </button>
-        <p className="game-help">Arrow keys on desktop · swipe on mobile</p>
+        <p className="game-help">Swipe on mobile · arrow keys on desktop</p>
       </div>
     </div>
   );
