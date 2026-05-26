@@ -74,6 +74,9 @@ export function CoinMergeGame() {
 
   return (
     <div className="game-shell">
+      <div className="game-topbar">
+        <WalletButton />
+      </div>
       <header className="game-header">
         <div className="game-header__top">
           <div>
