@@ -10,17 +10,21 @@ import {
 } from "@/lib/game";
 import { Board } from "./Board";
 import { Score } from "./Score";
+import { WalletButton } from "./WalletButton";
 
 const BEST_KEY = "coin-merge-best";
 
 export function CoinMergeGame() {
   const [board, setBoard] = useState<BoardType>(() => initialBoard());
   const [score, setScore] = useState(0);
-  const [best, setBest] = useState<number>(() => {
-    if (typeof window === "undefined") return 0;
-    return Number(window.localStorage.getItem(BEST_KEY) ?? 0);
-  });
+  // Load `best` after mount to avoid SSR/client hydration mismatch.
+  const [best, setBest] = useState<number>(0);
   const [gameOver, setGameOver] = useState(false);
+
+  useEffect(() => {
+    const stored = Number(window.localStorage.getItem(BEST_KEY) ?? 0);
+    if (stored > 0) setBest(stored);
+  }, []);
 
   const restart = useCallback(() => {
     setBoard(initialBoard());
