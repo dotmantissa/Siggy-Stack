@@ -508,3 +508,83 @@
   font-size: 0.95rem;
 }
 .game-over__score strong { color: var(--foreground); font-weight: 700; }
+
+/* ===== Wallet UI ===== */
+.game-topbar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 0.75rem;
+}
+.wallet { position: relative; }
+.wallet__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.875rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--foreground) 12%, transparent);
+  background: color-mix(in oklab, var(--foreground) 4%, transparent);
+  color: var(--foreground);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease, transform 120ms ease;
+}
+.wallet__btn:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--foreground) 8%, transparent);
+  border-color: color-mix(in oklab, var(--foreground) 22%, transparent);
+}
+.wallet__btn:active:not(:disabled) { transform: scale(0.97); }
+.wallet__btn:disabled { opacity: 0.7; cursor: progress; }
+.wallet__btn--connected { padding-left: 0.7rem; }
+.wallet__dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 0 3px color-mix(in oklab, #22c55e 25%, transparent);
+}
+.wallet__addr { font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
+.wallet__spin { animation: wallet-spin 1s linear infinite; }
+@keyframes wallet-spin { to { transform: rotate(360deg); } }
+.wallet__menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  min-width: 160px;
+  padding: 0.35rem;
+  border-radius: 0.75rem;
+  border: 1px solid color-mix(in oklab, var(--foreground) 14%, transparent);
+  background: var(--background);
+  box-shadow: 0 12px 32px -12px rgba(0,0,0,0.6);
+  z-index: 20;
+}
+.wallet__menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  background: transparent;
+  border: none;
+  color: var(--foreground);
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-align: left;
+}
+.wallet__menu-item:hover { background: color-mix(in oklab, var(--foreground) 8%, transparent); }
+.wallet__error {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  max-width: 240px;
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  background: color-mix(in oklab, #ef4444 18%, var(--background));
+  border: 1px solid color-mix(in oklab, #ef4444 35%, transparent);
+  color: var(--foreground);
+  font-size: 0.75rem;
+  z-index: 20;
+}
