@@ -173,6 +173,15 @@ export function CoinMergeGame() {
       </div>
 
       <Leaderboard currentWallet={address} refreshKey={lbRefresh} />
+
+      <LegendaryModal
+        open={showLegendaryModal}
+        onPlayAgain={() => {
+          setShowLegendaryModal(false);
+          restart();
+        }}
+        onDismiss={() => setShowLegendaryModal(false)}
+      />
     </div>
   );
 }
