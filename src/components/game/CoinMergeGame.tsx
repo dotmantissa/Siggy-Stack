@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { RotateCcw } from "lucide-react";
 import {
   initialBoard,
@@ -11,6 +11,9 @@ import {
 import { Board } from "./Board";
 import { Score } from "./Score";
 import { WalletButton } from "./WalletButton";
+import { Leaderboard } from "./Leaderboard";
+import { submitScore } from "@/lib/leaderboard";
+import { useWallet } from "@/hooks/useWallet";
 
 const BEST_KEY = "coin-merge-best";
 
@@ -20,6 +23,13 @@ export function CoinMergeGame() {
   // Load `best` after mount to avoid SSR/client hydration mismatch.
   const [best, setBest] = useState<number>(0);
   const [gameOver, setGameOver] = useState(false);
+  // Bumped whenever we submit a score, so the leaderboard refetches.
+  const [lbRefresh, setLbRefresh] = useState(0);
+
+  const { address } = useWallet();
+  // Latest score in a ref so the game-over effect doesn't re-fire on every score change.
+  const scoreRef = useRef(0);
+  scoreRef.current = score;
 
   useEffect(() => {
     const stored = Number(window.localStorage.getItem(BEST_KEY) ?? 0);
@@ -62,6 +72,15 @@ export function CoinMergeGame() {
     },
     [gameOver],
   );
+
+  // When the game ends, fire-and-forget a submission to the leaderboard.
+  // Only saves for connected wallets, and never blocks gameplay.
+  useEffect(() => {
+    if (!gameOver) return;
+    const finalScore = scoreRef.current;
+    if (!address || finalScore <= 0) return;
+    submitScore(address, finalScore).then(() => setLbRefresh((n) => n + 1));
+  }, [gameOver, address]);
 
   useEffect(() => {
     const prevent = (e: KeyboardEvent) => {
@@ -121,6 +140,8 @@ export function CoinMergeGame() {
         </button>
         <p className="game-help">Swipe on mobile · arrow keys on desktop</p>
       </div>
+
+      <Leaderboard currentWallet={address} refreshKey={lbRefresh} />
     </div>
   );
 }
