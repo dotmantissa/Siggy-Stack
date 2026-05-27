@@ -1,4 +1,5 @@
 import { COINS, type Tile as TileType } from "@/lib/game";
+import ritualLogo from "@/assets/ritual-logo.png";
 
 interface Props {
   tile: TileType;
@@ -17,7 +18,7 @@ const COIN_META: Record<
   SOL: { symbol: "◎", short: "SOL" },
   ETH: { symbol: "Ξ", short: "ETH" },
   BTC: { symbol: "₿", short: "BTC" },
-  LEGENDARY: { symbol: "★", short: "LGND" },
+  LEGENDARY: { symbol: "★", short: "RITUAL" },
 };
 
 export function Tile({ tile, cellSize, gap }: Props) {
@@ -25,10 +26,11 @@ export function Tile({ tile, cellSize, gap }: Props) {
   const y = tile.row * (cellSize + gap);
   const coin = COINS[tile.tier];
   const meta = COIN_META[coin];
+  const isLegendary = coin === "LEGENDARY";
 
-  // Slightly smaller symbol/label scaling for higher tiers' longer labels.
   const symbolSize = Math.max(18, Math.round(cellSize * 0.42));
   const labelSize = Math.max(9, Math.round(cellSize * 0.14));
+  const logoSize = Math.round(cellSize * 0.58);
 
   const style: React.CSSProperties & Record<"--tx" | "--ty", string> = {
     width: cellSize,
@@ -45,14 +47,41 @@ export function Tile({ tile, cellSize, gap }: Props) {
       } ${tile.isNew ? "coin-tile--new" : ""}`}
       style={style}
     >
+      {/* Outer animated glow halo — only rendered for LEGENDARY tiles
+          to keep regular tiles lightweight on mobile. */}
+      {isLegendary && <div className="coin-tile__halo" aria-hidden />}
+
       {/* Inner coin face — gives the tile depth like a real coin. */}
       <div className="coin-tile__face">
-        <span className="coin-tile__symbol" style={{ fontSize: symbolSize }}>
-          {meta.symbol}
-        </span>
-        <span className="coin-tile__label" style={{ fontSize: labelSize }}>
-          {meta.short}
-        </span>
+        {isLegendary ? (
+          <>
+            <img
+              src={ritualLogo}
+              alt="Ritual"
+              className="coin-tile__ritual"
+              width={logoSize}
+              height={logoSize}
+              draggable={false}
+            />
+            <span className="coin-tile__label" style={{ fontSize: labelSize }}>
+              {meta.short}
+            </span>
+            {/* Lightweight particle sparkles (pure CSS, no JS loop). */}
+            <span className="coin-tile__spark coin-tile__spark--1" aria-hidden />
+            <span className="coin-tile__spark coin-tile__spark--2" aria-hidden />
+            <span className="coin-tile__spark coin-tile__spark--3" aria-hidden />
+            <span className="coin-tile__spark coin-tile__spark--4" aria-hidden />
+          </>
+        ) : (
+          <>
+            <span className="coin-tile__symbol" style={{ fontSize: symbolSize }}>
+              {meta.symbol}
+            </span>
+            <span className="coin-tile__label" style={{ fontSize: labelSize }}>
+              {meta.short}
+            </span>
+          </>
+        )}
       </div>
       {/* Sheen overlay — animates on merge/new for a premium feel. */}
       <div className="coin-tile__sheen" aria-hidden />
