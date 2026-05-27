@@ -395,15 +395,39 @@
     oklch(1 0 0 / 0.15) 100%
   );
 }
-.coin-tile--legendary {
-  background: linear-gradient(135deg, var(--coin-legendary-a), var(--coin-legendary-b));
-  color: oklch(0.15 0.02 280);
-  box-shadow:
-    0 0 22px oklch(0.78 0.2 85 / 0.7),
-    0 0 48px oklch(0.65 0.25 320 / 0.55),
-    inset 0 1px 0 oklch(1 0 0 / 0.35);
-  animation: legendary-glow 2.4s ease-in-out infinite;
+/* ---------- LEGENDARY: Ritual-themed premium tile ---------- */
+:root {
+  --ritual-green: oklch(0.78 0.21 152);
+  --ritual-green-soft: oklch(0.85 0.18 152);
+  --ritual-dark: oklch(0.18 0.04 160);
 }
+.coin-tile--legendary {
+  background:
+    radial-gradient(circle at 50% 40%, oklch(0.32 0.12 152 / 0.9), oklch(0.12 0.03 160) 75%);
+  color: var(--ritual-green-soft);
+  border: 1px solid color-mix(in oklab, var(--ritual-green) 55%, transparent);
+  box-shadow:
+    0 0 18px color-mix(in oklab, var(--ritual-green) 65%, transparent),
+    0 0 42px color-mix(in oklab, var(--ritual-green) 45%, transparent),
+    inset 0 1px 0 oklch(1 0 0 / 0.18);
+  animation: legendary-pulse 2.6s ease-in-out infinite;
+}
+/* Soft animated halo behind the tile */
+.coin-tile__halo {
+  position: absolute;
+  inset: -30%;
+  border-radius: 38%;
+  pointer-events: none;
+  background: radial-gradient(
+    circle,
+    color-mix(in oklab, var(--ritual-green) 55%, transparent) 0%,
+    transparent 60%
+  );
+  filter: blur(10px);
+  z-index: -1;
+  animation: legendary-halo 3.2s ease-in-out infinite;
+}
+/* Rotating conic shimmer overlay */
 .coin-tile--legendary .coin-tile__face::before {
   content: "";
   position: absolute;
@@ -411,34 +435,77 @@
   background: conic-gradient(
     from 0deg,
     transparent 0deg,
-    oklch(1 0 0 / 0.18) 60deg,
+    color-mix(in oklab, var(--ritual-green) 45%, transparent) 60deg,
     transparent 120deg,
     transparent 360deg
   );
-  animation: legendary-shimmer 3.2s linear infinite;
+  animation: legendary-shimmer 4s linear infinite;
   z-index: 0;
 }
-.coin-tile--legendary .coin-tile__symbol,
+.coin-tile__ritual,
 .coin-tile--legendary .coin-tile__label {
   position: relative;
   z-index: 1;
 }
-@keyframes legendary-glow {
+.coin-tile__ritual {
+  filter: drop-shadow(0 0 6px color-mix(in oklab, var(--ritual-green) 80%, transparent))
+          drop-shadow(0 0 12px color-mix(in oklab, var(--ritual-green) 50%, transparent));
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.coin-tile--legendary .coin-tile__label {
+  color: var(--ritual-green-soft);
+  letter-spacing: 0.18em;
+}
+/* Tiny CSS sparkles — cheap on mobile, no JS */
+.coin-tile__spark {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #d1fae5;
+  box-shadow: 0 0 6px 1px var(--ritual-green);
+  opacity: 0;
+  z-index: 1;
+  animation: legendary-spark 2.4s ease-in-out infinite;
+}
+.coin-tile__spark--1 { top: 18%; left: 14%; animation-delay: 0s; }
+.coin-tile__spark--2 { top: 22%; right: 16%; animation-delay: 0.6s; }
+.coin-tile__spark--3 { bottom: 20%; left: 22%; animation-delay: 1.2s; }
+.coin-tile__spark--4 { bottom: 16%; right: 18%; animation-delay: 1.8s; }
+
+@keyframes legendary-pulse {
   0%, 100% {
     box-shadow:
-      0 0 22px oklch(0.78 0.2 85 / 0.7),
-      0 0 48px oklch(0.65 0.25 320 / 0.55),
-      inset 0 1px 0 oklch(1 0 0 / 0.35);
+      0 0 18px color-mix(in oklab, var(--ritual-green) 65%, transparent),
+      0 0 42px color-mix(in oklab, var(--ritual-green) 45%, transparent),
+      inset 0 1px 0 oklch(1 0 0 / 0.18);
   }
   50% {
     box-shadow:
-      0 0 34px oklch(0.78 0.2 85 / 0.95),
-      0 0 70px oklch(0.65 0.25 320 / 0.85),
-      inset 0 1px 0 oklch(1 0 0 / 0.45);
+      0 0 28px color-mix(in oklab, var(--ritual-green) 90%, transparent),
+      0 0 64px color-mix(in oklab, var(--ritual-green) 65%, transparent),
+      inset 0 1px 0 oklch(1 0 0 / 0.28);
   }
 }
-@keyframes legendary-shimmer {
-  to { transform: rotate(360deg); }
+@keyframes legendary-halo {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50%      { opacity: 0.95; transform: scale(1.08); }
+}
+@keyframes legendary-shimmer { to { transform: rotate(360deg); } }
+@keyframes legendary-spark {
+  0%, 100% { opacity: 0; transform: scale(0.6); }
+  50%      { opacity: 1; transform: scale(1.2); }
+}
+/* Merge burst — fires once when BTC + BTC → LEGENDARY */
+.coin-tile--legendary.coin-tile--merged {
+  animation: legendary-pulse 2.6s ease-in-out infinite,
+             legendary-burst 700ms ease-out;
+}
+@keyframes legendary-burst {
+  0%   { transform: translate(var(--tx), var(--ty)) scale(0.4); filter: brightness(2); }
+  40%  { transform: translate(var(--tx), var(--ty)) scale(1.18); filter: brightness(1.6); }
+  100% { transform: translate(var(--tx), var(--ty)) scale(1); filter: brightness(1); }
 }
 
 /* ---------- Actions / overlay ---------- */
