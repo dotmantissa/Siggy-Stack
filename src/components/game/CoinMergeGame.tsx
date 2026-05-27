@@ -26,6 +26,11 @@ export function CoinMergeGame() {
   // Load `best` after mount to avoid SSR/client hydration mismatch.
   const [best, setBest] = useState<number>(0);
   const [gameOver, setGameOver] = useState(false);
+  // Tracks whether the player produced a LEGENDARY tile during this run.
+  // Reset on restart. Drives the post-game-over Ritual achievement modal.
+  const [hasUnlockedLegendary, setHasUnlockedLegendary] = useState(false);
+  // True once we've shown the modal for this run so it only appears once.
+  const [showLegendaryModal, setShowLegendaryModal] = useState(false);
   // Bumped whenever we submit a score, so the leaderboard refetches.
   const [lbRefresh, setLbRefresh] = useState(0);
 
@@ -43,6 +48,8 @@ export function CoinMergeGame() {
     setBoard(initialBoard());
     setScore(0);
     setGameOver(false);
+    setHasUnlockedLegendary(false);
+    setShowLegendaryModal(false);
   }, []);
 
   const handleMove = useCallback(
@@ -69,6 +76,19 @@ export function CoinMergeGame() {
           });
         }
 
+        // Detect if a LEGENDARY tile now exists on the board. We do this
+        // here (not in game.ts) so the pure game logic stays untouched.
+        // Gameplay continues normally — the celebration only fires after
+        // game over, so the player is never interrupted mid-run.
+        for (const row of next) {
+          for (const tile of row) {
+            if (tile && tile.tier === LEGENDARY_TIER) {
+              setHasUnlockedLegendary(true);
+              break;
+            }
+          }
+        }
+
         if (isGameOver(withSpawn)) setGameOver(true);
         return withSpawn;
       });
@@ -81,9 +101,17 @@ export function CoinMergeGame() {
   useEffect(() => {
     if (!gameOver) return;
     const finalScore = scoreRef.current;
-    if (!address || finalScore <= 0) return;
-    submitScore(address, finalScore).then(() => setLbRefresh((n) => n + 1));
-  }, [gameOver, address]);
+    if (address && finalScore > 0) {
+      submitScore(address, finalScore).then(() => setLbRefresh((n) => n + 1));
+    }
+    // Reveal the Ritual achievement modal AFTER game over, only if the
+    // player actually reached LEGENDARY during this run.
+    if (hasUnlockedLegendary) {
+      // Small delay so the game-over overlay animates in first.
+      const t = setTimeout(() => setShowLegendaryModal(true), 450);
+      return () => clearTimeout(t);
+    }
+  }, [gameOver, address, hasUnlockedLegendary]);
 
   useEffect(() => {
     const prevent = (e: KeyboardEvent) => {
