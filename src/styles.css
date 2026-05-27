@@ -622,7 +622,7 @@
   border-radius: 0.5rem;
 }
 .lb__refresh:hover { color: var(--foreground); background: color-mix(in oklab, var(--foreground) 6%, transparent); }
-.lb__spin { animation: wallet__spin 0.9s linear infinite; }
+.lb__spin { animation: wallet-spin 0.9s linear infinite; }
 
 .lb__empty {
   margin: 0.5rem 0;
