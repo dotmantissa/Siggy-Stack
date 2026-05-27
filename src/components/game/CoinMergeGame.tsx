@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { RotateCcw } from "lucide-react";
 import {
+  COINS,
   initialBoard,
   isGameOver,
   move,
@@ -12,10 +13,12 @@ import { Board } from "./Board";
 import { Score } from "./Score";
 import { WalletButton } from "./WalletButton";
 import { Leaderboard } from "./Leaderboard";
+import { LegendaryModal } from "./LegendaryModal";
 import { submitScore } from "@/lib/leaderboard";
 import { useWallet } from "@/hooks/useWallet";
 
 const BEST_KEY = "coin-merge-best";
+const LEGENDARY_TIER = COINS.length - 1;
 
 export function CoinMergeGame() {
   const [board, setBoard] = useState<BoardType>(() => initialBoard());
