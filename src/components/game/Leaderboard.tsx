@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import { Trophy, RefreshCw } from "lucide-react";
+import { Trophy, RefreshCw, Sparkles } from "lucide-react";
 import {
   fetchTodayLeaderboard,
   type LeaderboardEntry,
 } from "@/lib/leaderboard";
+import { fetchEligibleSet } from "@/lib/gsiggy";
 import { shortenAddress } from "@/hooks/useWallet";
 
 interface Props {
@@ -16,12 +17,17 @@ interface Props {
 // Daily leaderboard panel. Read-only — submissions happen from gameplay.
 export function Leaderboard({ currentWallet, refreshKey = 0 }: Props) {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
+  const [eligible, setEligible] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     setLoading(true);
     const data = await fetchTodayLeaderboard(50);
     setEntries(data);
+    // Fetch eligibility for everyone on today's board so we can show a
+    // subtle indicator beside players who unlocked gSiggy.
+    const elig = await fetchEligibleSet(data.map((d) => d.wallet_address));
+    setEligible(elig);
     setLoading(false);
   }, []);
 
@@ -56,6 +62,7 @@ export function Leaderboard({ currentWallet, refreshKey = 0 }: Props) {
         <ol className="lb__list">
           {entries.map((e, i) => {
             const isMe = lowerWallet && e.wallet_address === lowerWallet;
+            const isEligible = eligible.has(e.wallet_address);
             return (
               <li
                 key={e.wallet_address}
@@ -64,6 +71,11 @@ export function Leaderboard({ currentWallet, refreshKey = 0 }: Props) {
                 <span className="lb__rank">{i + 1}</span>
                 <span className="lb__addr">
                   {shortenAddress(e.wallet_address)}
+                  {isEligible && (
+                    <span className="lb__gsiggy" title="gSiggy eligible">
+                      <Sparkles size={9} />
+                    </span>
+                  )}
                   {isMe && <span className="lb__you">you</span>}
                 </span>
                 <span className="lb__score">{e.score}</span>
