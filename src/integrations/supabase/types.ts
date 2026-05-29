@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      gsiggy_eligibility: {
+        Row: {
+          best_score: number
+          best_tier: number
+          created_at: string
+          eligible: boolean
+          unlocked_at: string | null
+          updated_at: string
+          wallet_address: string
+        }
+        Insert: {
+          best_score?: number
+          best_tier?: number
+          created_at?: string
+          eligible?: boolean
+          unlocked_at?: string | null
+          updated_at?: string
+          wallet_address: string
+        }
+        Update: {
+          best_score?: number
+          best_tier?: number
+          created_at?: string
+          eligible?: boolean
+          unlocked_at?: string | null
+          updated_at?: string
+          wallet_address?: string
+        }
+        Relationships: []
+      }
       leaderboard_scores: {
         Row: {
           created_at: string
