@@ -1013,3 +1013,84 @@
   color: var(--ritual-green-soft);
   box-shadow: 0 0 6px color-mix(in oklab, var(--ritual-green) 50%, transparent);
 }
+
+/* ============ Ritual Status card ============ */
+.ritual {
+  margin-top: 1rem;
+  padding: 1rem 1.1rem;
+  border-radius: 1.1rem;
+  background:
+    radial-gradient(120% 100% at 0% 0%, color-mix(in oklab, var(--ritual-green) 14%, transparent), transparent 60%),
+    color-mix(in oklab, var(--foreground) 4%, transparent);
+  border: 1px solid color-mix(in oklab, var(--ritual-green) 35%, transparent);
+  backdrop-filter: blur(8px);
+}
+.ritual__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+.ritual__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--ritual-green-soft);
+}
+.ritual__chip {
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 600;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--ritual-green) 18%, transparent);
+  color: var(--ritual-green-soft);
+  border: 1px solid color-mix(in oklab, var(--ritual-green) 35%, transparent);
+}
+.ritual__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0 0 0.85rem 0;
+}
+.ritual__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.82rem;
+}
+.ritual__row dt {
+  color: color-mix(in oklab, var(--foreground) 60%, transparent);
+  letter-spacing: 0.04em;
+}
+.ritual__row dd {
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.ritual__row dd.is-eligible { color: var(--ritual-green-soft); }
+.ritual__btn {
+  width: 100%;
+  padding: 0.7rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid color-mix(in oklab, var(--ritual-green) 45%, transparent);
+  background: color-mix(in oklab, var(--ritual-green) 16%, transparent);
+  color: var(--ritual-green-soft);
+  font-weight: 600;
+  font-size: 0.86rem;
+  letter-spacing: 0.04em;
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+.ritual__btn:disabled { cursor: not-allowed; }
+.ritual__hint {
+  margin: 0.55rem 0 0 0;
+  font-size: 0.72rem;
+  text-align: center;
+  color: color-mix(in oklab, var(--foreground) 55%, transparent);
+}
