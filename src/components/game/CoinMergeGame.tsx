@@ -16,6 +16,7 @@ import { Leaderboard } from "./Leaderboard";
 import { LegendaryModal } from "./LegendaryModal";
 import { GsiggyCard } from "./GsiggyCard";
 import { ProfileCard } from "./ProfileCard";
+import { RitualCard } from "./RitualCard";
 import { submitScore } from "@/lib/leaderboard";
 import {
   fetchEligibility,
@@ -251,6 +252,9 @@ export function CoinMergeGame() {
 
       {/* gSiggy eligibility card — visible to everyone. */}
       <GsiggyCard eligible={isEligible} />
+
+      {/* Ritual testnet status — only rendered for eligible players. */}
+      <RitualCard eligible={isEligible} />
 
       <Leaderboard currentWallet={address} refreshKey={lbRefresh} />
 
