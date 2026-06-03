@@ -253,6 +253,9 @@ export function CoinMergeGame() {
       {/* gSiggy eligibility card — visible to everyone. */}
       <GsiggyCard eligible={isEligible} />
 
+      {/* Ritual testnet status — only rendered for eligible players. */}
+      <RitualCard eligible={isEligible} />
+
       <Leaderboard currentWallet={address} refreshKey={lbRefresh} />
 
       <LegendaryModal
