@@ -46,6 +46,11 @@ export function Leaderboard({ currentWallet, refreshKey = 0, playerRank = null }
           <Trophy size={16} />
           <span>Daily Leaderboard</span>
         </div>
+        {playerRank ? (
+          <span className="lb__myrank" title="Your rank today">
+            #{playerRank}
+          </span>
+        ) : null}
         <button
           className="lb__refresh"
           onClick={load}
