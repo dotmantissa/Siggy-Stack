@@ -12,10 +12,12 @@ interface Props {
   currentWallet?: string | null;
   // Bumped by the game whenever a new score is submitted, to trigger a refetch.
   refreshKey?: number;
+  // Connected player's rank on today's board (null when no entry yet).
+  playerRank?: number | null;
 }
 
 // Daily leaderboard panel. Read-only — submissions happen from gameplay.
-export function Leaderboard({ currentWallet, refreshKey = 0 }: Props) {
+export function Leaderboard({ currentWallet, refreshKey = 0, playerRank = null }: Props) {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [eligible, setEligible] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
