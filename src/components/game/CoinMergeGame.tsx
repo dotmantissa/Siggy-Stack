@@ -16,6 +16,7 @@ import { Leaderboard } from "./Leaderboard";
 import { LegendaryModal } from "./LegendaryModal";
 import { GsiggyCard } from "./GsiggyCard";
 import { ProfileCard } from "./ProfileCard";
+import { RitualCard } from "./RitualCard";
 import { submitScore } from "@/lib/leaderboard";
 import {
   fetchEligibility,
