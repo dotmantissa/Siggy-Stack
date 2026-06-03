@@ -17,13 +17,20 @@ import { LegendaryModal } from "./LegendaryModal";
 import { GsiggyCard } from "./GsiggyCard";
 import { ProfileCard } from "./ProfileCard";
 import { RitualCard } from "./RitualCard";
-import { submitScore } from "@/lib/leaderboard";
+import { ProgressionPath } from "./ProgressionPath";
+import { AchievementsCard } from "./AchievementsCard";
+import { submitScore, fetchPlayerDailyStanding } from "@/lib/leaderboard";
 import {
   fetchEligibility,
   getLocalEligibility,
   saveRun,
   type GsiggyProfile,
 } from "@/lib/gsiggy";
+import {
+  loadAchievementState,
+  saveAchievementState,
+  type AchievementState,
+} from "@/lib/achievements";
 import { useWallet } from "@/hooks/useWallet";
 
 const BEST_KEY = "coin-merge-best";
@@ -46,6 +53,16 @@ export function CoinMergeGame() {
   const [profile, setProfile] = useState<GsiggyProfile | null>(null);
   // Highest tile tier reached during the current run (for profile stats).
   const [bestTierThisRun, setBestTierThisRun] = useState(0);
+  // Persisted achievement flags (per wallet, local cache).
+  const [ach, setAch] = useState<AchievementState>({
+    firstMerge: false,
+    dailyHighScore: false,
+  });
+  // Today's leaderboard standing for the connected wallet.
+  const [dailyStanding, setDailyStanding] = useState<{
+    rank: number;
+    score: number;
+  } | null>(null);
 
   const { address } = useWallet();
   // Latest values in refs so the game-over effect doesn't re-fire on score changes.
@@ -62,8 +79,10 @@ export function CoinMergeGame() {
   }, []);
 
   // Whenever the wallet connects (or changes), pull that wallet's eligibility
-  // profile so it survives refresh and reconnects.
+  // profile + achievement state + today's standing so everything survives refresh.
   useEffect(() => {
+    setAch(loadAchievementState(address));
+
     if (!address) {
       // Disconnected: show local-only eligibility so unconnected players
       // still see progress they've made in this browser.
@@ -74,11 +93,16 @@ export function CoinMergeGame() {
         best_tier: 0,
         unlocked_at: null,
       });
+      setDailyStanding(null);
       return;
     }
     let cancelled = false;
     fetchEligibility(address).then((p) => {
       if (!cancelled) setProfile(p);
+    });
+    fetchPlayerDailyStanding(address).then((s) => {
+      if (cancelled) return;
+      setDailyStanding(s);
     });
     return () => {
       cancelled = true;
@@ -104,6 +128,14 @@ export function CoinMergeGame() {
         const withSpawn = spawnRandomTile(next);
 
         if (gained > 0) {
+          // First-ever merge → unlock the "First Merge" achievement.
+          setAch((cur) => {
+            if (cur.firstMerge) return cur;
+            const updated = { ...cur, firstMerge: true };
+            saveAchievementState(address, updated);
+            return updated;
+          });
+
           setScore((s) => {
             const ns = s + gained;
             setBest((b) => {
@@ -136,14 +168,14 @@ export function CoinMergeGame() {
         return withSpawn;
       });
     },
-    [gameOver],
+    [gameOver, address],
   );
 
   // When the game ends:
   //  1. Submit the score to the daily leaderboard.
   //  2. Persist eligibility + best stats for the connected wallet.
-  //  3. Reveal the Ritual achievement modal (if applicable).
-  // None of this blocks gameplay — restart works regardless.
+  //  3. Refresh today's standing + flag the Daily High Score achievement.
+  //  4. Reveal the Ritual achievement modal (if applicable).
   useEffect(() => {
     if (!gameOver) return;
     const finalScore = scoreRef.current;
@@ -151,7 +183,20 @@ export function CoinMergeGame() {
     const unlocked = legendaryRef.current;
 
     if (address && finalScore > 0) {
-      submitScore(address, finalScore).then(() => setLbRefresh((n) => n + 1));
+      submitScore(address, finalScore).then(async () => {
+        setLbRefresh((n) => n + 1);
+        // Re-fetch standing and award "Daily High Score" if we're now #1.
+        const standing = await fetchPlayerDailyStanding(address);
+        setDailyStanding(standing);
+        if (standing?.rank === 1) {
+          setAch((cur) => {
+            if (cur.dailyHighScore) return cur;
+            const updated = { ...cur, dailyHighScore: true };
+            saveAchievementState(address, updated);
+            return updated;
+          });
+        }
+      });
     }
     if (address) {
       // Persist eligibility for the connected wallet (sticky on the server).
@@ -189,6 +234,9 @@ export function CoinMergeGame() {
   }, []);
 
   const isEligible = !!profile?.eligible;
+  // Highest tile ever — combines persisted best + the in-progress run.
+  const overallBestTier = Math.max(profile?.best_tier ?? 0, bestTierThisRun);
+  const overallBestScore = Math.max(profile?.best_score ?? 0, best, score);
 
   return (
     <div className="game-shell">
@@ -240,15 +288,23 @@ export function CoinMergeGame() {
         <p className="game-help">Swipe on mobile · arrow keys on desktop</p>
       </div>
 
-      {/* Connected player's profile: best score, best tile, eligibility. */}
+      {/* Connected player's profile: identity + best stats + Ritual status. */}
       {address && profile && (
         <ProfileCard
           address={address}
-          bestScore={Math.max(profile.best_score, score)}
-          bestTier={Math.max(profile.best_tier, bestTierThisRun)}
+          bestScore={overallBestScore}
+          bestTier={overallBestTier}
           eligible={isEligible}
+          dailyRank={dailyStanding?.rank ?? null}
+          dailyScore={dailyStanding?.score ?? null}
         />
       )}
+
+      {/* Visual milestone path — visible to everyone. */}
+      <ProgressionPath bestTier={overallBestTier} />
+
+      {/* Achievement grid — derived from bestTier + persisted flags. */}
+      <AchievementsCard bestTier={overallBestTier} state={ach} />
 
       {/* gSiggy eligibility card — visible to everyone. */}
       <GsiggyCard eligible={isEligible} />
@@ -256,7 +312,11 @@ export function CoinMergeGame() {
       {/* Ritual testnet status — only rendered for eligible players. */}
       <RitualCard eligible={isEligible} />
 
-      <Leaderboard currentWallet={address} refreshKey={lbRefresh} />
+      <Leaderboard
+        currentWallet={address}
+        refreshKey={lbRefresh}
+        playerRank={dailyStanding?.rank ?? null}
+      />
 
       <LegendaryModal
         open={showLegendaryModal}

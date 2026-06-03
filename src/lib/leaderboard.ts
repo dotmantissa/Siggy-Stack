@@ -51,3 +51,23 @@ export async function submitScore(wallet: string, score: number): Promise<void> 
     console.error("[leaderboard] submit failed", error);
   }
 }
+
+// Fetch a wallet's rank + score on today's board.
+// Returns null when the wallet has no entry today.
+export async function fetchPlayerDailyStanding(
+  wallet: string,
+): Promise<{ rank: number; score: number } | null> {
+  if (!wallet) return null;
+  const addr = wallet.toLowerCase();
+  const { data, error } = await supabase
+    .from("leaderboard_scores")
+    .select("wallet_address, score")
+    .eq("day", todayUtc())
+    .order("score", { ascending: false })
+    .order("updated_at", { ascending: true });
+
+  if (error || !data) return null;
+  const idx = data.findIndex((r) => r.wallet_address === addr);
+  if (idx === -1) return null;
+  return { rank: idx + 1, score: data[idx].score };
+}
