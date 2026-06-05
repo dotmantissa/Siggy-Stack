@@ -98,6 +98,11 @@ export function CoinMergeGame() {
   // profile + achievement state + today's standing so everything survives refresh.
   useEffect(() => {
     setAch(loadAchievementState(address));
+    // Restore any previously recorded Ritual score for this wallet.
+    const persisted = loadRecordedScore(address);
+    setScoreRecord(persisted);
+    setScoreStatus(persisted ? "synced" : "not_recorded");
+    setScoreError(null);
 
     if (!address) {
       // Disconnected: show local-only eligibility so unconnected players
