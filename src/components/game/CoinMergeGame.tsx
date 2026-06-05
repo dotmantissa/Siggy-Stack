@@ -17,8 +17,16 @@ import { LegendaryModal } from "./LegendaryModal";
 import { GsiggyCard } from "./GsiggyCard";
 import { ProfileCard } from "./ProfileCard";
 import { RitualCard } from "./RitualCard";
+import { RitualScoreCard } from "./RitualScoreCard";
+import { RitualScorePrompt } from "./RitualScorePrompt";
 import { ProgressionPath } from "./ProgressionPath";
 import { AchievementsCard } from "./AchievementsCard";
+import {
+  isNewBestScore,
+  loadRecordedScore,
+  recordBestScore,
+  type RecordedScore,
+} from "@/lib/ritual";
 import { submitScore, fetchPlayerDailyStanding } from "@/lib/leaderboard";
 import {
   fetchEligibility,
