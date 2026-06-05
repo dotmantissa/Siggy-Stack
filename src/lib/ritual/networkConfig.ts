@@ -19,19 +19,18 @@ export const RITUAL_NETWORK_NAME =
 
 // EIP-3085 chain params — used to add the chain to the wallet if missing.
 export const RITUAL_CHAIN = {
-  chainId: (env.VITE_RITUAL_CHAIN_ID as string) || "0xaa36a7", // default: Sepolia placeholder
+  chainId: env.VITE_RITUAL_CHAIN_ID || "0xaa36a7", // default: Sepolia placeholder
   chainName: RITUAL_NETWORK_NAME,
   nativeCurrency: {
-    name: (env.VITE_RITUAL_CURRENCY_SYMBOL as string) || "ETH",
-    symbol: (env.VITE_RITUAL_CURRENCY_SYMBOL as string) || "ETH",
+    name: env.VITE_RITUAL_CURRENCY_SYMBOL || "ETH",
+    symbol: env.VITE_RITUAL_CURRENCY_SYMBOL || "ETH",
     decimals: 18,
   },
   rpcUrls: [
-    (env.VITE_RITUAL_RPC_URL as string) ||
-      "https://ethereum-sepolia-rpc.publicnode.com",
+    env.VITE_RITUAL_RPC_URL || "https://ethereum-sepolia-rpc.publicnode.com",
   ],
   blockExplorerUrls: [
-    (env.VITE_RITUAL_EXPLORER_URL as string) || "https://sepolia.etherscan.io",
+    env.VITE_RITUAL_EXPLORER_URL || "https://sepolia.etherscan.io",
   ],
 } as const;
 
