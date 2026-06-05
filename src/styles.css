@@ -794,6 +794,23 @@
   color: var(--foreground);
   animation: ritual-modal-in 360ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
+.ritual-modal__close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--foreground) 14%, transparent);
+  background: color-mix(in oklab, var(--foreground) 6%, transparent);
+  color: color-mix(in oklab, var(--foreground) 75%, transparent);
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+.ritual-modal__close:hover { filter: brightness(1.2); }
 @keyframes ritual-modal-in {
   from { opacity: 0; transform: translateY(12px) scale(0.94); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
