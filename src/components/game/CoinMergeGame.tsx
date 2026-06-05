@@ -239,11 +239,43 @@ export function CoinMergeGame() {
       }));
     }
 
+    // Lightweight Ritual score prompt: only if connected + score strictly
+    // beats the player's previously recorded best. Runs asynchronously so it
+    // never blocks the game-over UI from rendering.
+    if (address && finalScore > 0 && isNewBestScore({ wallet: address, score: finalScore })) {
+      setScoreError(null);
+      const t = setTimeout(() => setShowScorePrompt(true), 600);
+      // Don't return cleanup here — we also want the legendary modal effect below.
+      void t;
+    }
+
     if (unlocked) {
       const t = setTimeout(() => setShowLegendaryModal(true), 450);
       return () => clearTimeout(t);
     }
   }, [gameOver, address]);
+
+  // Handler invoked when the player presses "Record Score" in the prompt.
+  const handleRecordScore = useCallback(async () => {
+    if (!address) return;
+    const finalScore = scoreRef.current;
+    setScoreStatus("recording");
+    setScoreError(null);
+    const outcome = await recordBestScore({
+      wallet: address,
+      score: finalScore,
+      bestTier: bestTierRef.current,
+      legendaryUnlocked: legendaryRef.current,
+    });
+    if (outcome.ok) {
+      setScoreRecord(outcome.record);
+      setScoreStatus("synced");
+      setShowScorePrompt(false);
+    } else {
+      setScoreStatus("failed");
+      setScoreError(outcome.message);
+    }
+  }, [address]);
 
   useEffect(() => {
     const prevent = (e: KeyboardEvent) => {
