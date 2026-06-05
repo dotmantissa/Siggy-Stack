@@ -72,6 +72,14 @@ export function CoinMergeGame() {
     score: number;
   } | null>(null);
 
+  // Ritual score recording state (independent of gameplay).
+  const [scoreRecord, setScoreRecord] = useState<RecordedScore | null>(null);
+  const [scoreStatus, setScoreStatus] = useState<
+    "not_recorded" | "recording" | "synced" | "failed"
+  >("not_recorded");
+  const [scoreError, setScoreError] = useState<string | null>(null);
+  const [showScorePrompt, setShowScorePrompt] = useState(false);
+
   const { address } = useWallet();
   // Latest values in refs so the game-over effect doesn't re-fire on score changes.
   const scoreRef = useRef(0);
