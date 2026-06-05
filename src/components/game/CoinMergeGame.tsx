@@ -394,6 +394,18 @@ export function CoinMergeGame() {
         }}
         onDismiss={() => setShowLegendaryModal(false)}
       />
+
+      <RitualScorePrompt
+        open={showScorePrompt}
+        score={scoreRef.current}
+        pending={scoreStatus === "recording"}
+        errorMessage={scoreError}
+        onConfirm={handleRecordScore}
+        onDismiss={() => {
+          if (scoreStatus === "recording") return;
+          setShowScorePrompt(false);
+        }}
+      />
     </div>
   );
 }
