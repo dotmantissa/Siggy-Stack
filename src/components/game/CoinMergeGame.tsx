@@ -310,7 +310,12 @@ export function CoinMergeGame() {
       <GsiggyCard eligible={isEligible} />
 
       {/* Ritual testnet status — only rendered for eligible players. */}
-      <RitualCard eligible={isEligible} />
+      <RitualCard
+        eligible={isEligible}
+        wallet={address}
+        bestScore={overallBestScore}
+        bestTier={overallBestTier}
+      />
 
       <Leaderboard
         currentWallet={address}
