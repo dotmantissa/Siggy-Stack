@@ -1088,11 +1088,53 @@
   opacity: 0.75;
 }
 .ritual__btn:disabled { cursor: not-allowed; }
+.ritual__btn--active {
+  cursor: pointer;
+  opacity: 1;
+  background: linear-gradient(135deg,
+    color-mix(in oklab, var(--ritual-green) 35%, transparent),
+    color-mix(in oklab, var(--ritual-green) 22%, transparent));
+  color: var(--ritual-green-soft);
+  transition: transform 0.15s ease, filter 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+}
+.ritual__btn--active:hover { filter: brightness(1.1); }
+.ritual__btn--active:active { transform: scale(0.98); }
+.ritual__btn--done {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  opacity: 1;
+  color: var(--ritual-green-soft);
+  background: color-mix(in oklab, var(--ritual-green) 10%, transparent);
+  border-color: color-mix(in oklab, var(--ritual-green) 35%, transparent);
+}
+.ritual__spin { animation: ritual-spin 0.9s linear infinite; }
+@keyframes ritual-spin { to { transform: rotate(360deg); } }
+.ritual__tx {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0.5rem auto 0;
+  font-size: 0.72rem;
+  color: var(--ritual-green-soft);
+  text-decoration: none;
+  text-align: center;
+  width: fit-content;
+}
+.ritual__tx:hover { text-decoration: underline; }
 .ritual__hint {
   margin: 0.55rem 0 0 0;
   font-size: 0.72rem;
   text-align: center;
   color: color-mix(in oklab, var(--foreground) 55%, transparent);
+}
+.ritual__hint--error {
+  color: color-mix(in oklab, oklch(0.65 0.22 25) 90%, var(--foreground));
 }
 
 /* ============ Profile additions ============ */
