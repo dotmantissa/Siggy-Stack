@@ -370,6 +370,16 @@ export function CoinMergeGame() {
         bestTier={overallBestTier}
       />
 
+      {/* Lightweight Ritual best-score recording status. */}
+      <RitualScoreCard
+        wallet={address}
+        record={scoreRecord}
+        status={scoreStatus}
+        errorMessage={scoreError}
+      />
+
+
+
       <Leaderboard
         currentWallet={address}
         refreshKey={lbRefresh}
