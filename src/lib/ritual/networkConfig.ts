@@ -11,10 +11,11 @@
 //   VITE_RITUAL_EXPLORER_URL=https://...
 //   VITE_RITUAL_CURRENCY_SYMBOL=ETH
 
-const env = (typeof import.meta !== "undefined" && import.meta.env) || {};
+const env = ((typeof import.meta !== "undefined" && import.meta.env) ||
+  {}) as Record<string, string | undefined>;
 
 export const RITUAL_NETWORK_NAME =
-  (env.VITE_RITUAL_CHAIN_NAME as string) || "Ritual Testnet";
+  env.VITE_RITUAL_CHAIN_NAME || "Ritual Testnet";
 
 // EIP-3085 chain params — used to add the chain to the wallet if missing.
 export const RITUAL_CHAIN = {
