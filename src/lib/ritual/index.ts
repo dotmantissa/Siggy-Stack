@@ -21,3 +21,11 @@ export {
   type RecordedAchievement,
   type RecordOutcome,
 } from "./achievementRecorder";
+export {
+  recordBestScore,
+  loadRecordedScore,
+  type ScoreInput,
+  type RecordedScore,
+  type ScoreOutcome,
+} from "./scoreRecorder";
+export { isNewBestScore } from "./scoreValidation";

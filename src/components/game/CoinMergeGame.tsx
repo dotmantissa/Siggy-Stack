@@ -17,8 +17,16 @@ import { LegendaryModal } from "./LegendaryModal";
 import { GsiggyCard } from "./GsiggyCard";
 import { ProfileCard } from "./ProfileCard";
 import { RitualCard } from "./RitualCard";
+import { RitualScoreCard } from "./RitualScoreCard";
+import { RitualScorePrompt } from "./RitualScorePrompt";
 import { ProgressionPath } from "./ProgressionPath";
 import { AchievementsCard } from "./AchievementsCard";
+import {
+  isNewBestScore,
+  loadRecordedScore,
+  recordBestScore,
+  type RecordedScore,
+} from "@/lib/ritual";
 import { submitScore, fetchPlayerDailyStanding } from "@/lib/leaderboard";
 import {
   fetchEligibility,
@@ -64,6 +72,14 @@ export function CoinMergeGame() {
     score: number;
   } | null>(null);
 
+  // Ritual score recording state (independent of gameplay).
+  const [scoreRecord, setScoreRecord] = useState<RecordedScore | null>(null);
+  const [scoreStatus, setScoreStatus] = useState<
+    "not_recorded" | "recording" | "synced" | "failed"
+  >("not_recorded");
+  const [scoreError, setScoreError] = useState<string | null>(null);
+  const [showScorePrompt, setShowScorePrompt] = useState(false);
+
   const { address } = useWallet();
   // Latest values in refs so the game-over effect doesn't re-fire on score changes.
   const scoreRef = useRef(0);
@@ -82,6 +98,11 @@ export function CoinMergeGame() {
   // profile + achievement state + today's standing so everything survives refresh.
   useEffect(() => {
     setAch(loadAchievementState(address));
+    // Restore any previously recorded Ritual score for this wallet.
+    const persisted = loadRecordedScore(address);
+    setScoreRecord(persisted);
+    setScoreStatus(persisted ? "synced" : "not_recorded");
+    setScoreError(null);
 
     if (!address) {
       // Disconnected: show local-only eligibility so unconnected players
@@ -218,11 +239,43 @@ export function CoinMergeGame() {
       }));
     }
 
+    // Lightweight Ritual score prompt: only if connected + score strictly
+    // beats the player's previously recorded best. Runs asynchronously so it
+    // never blocks the game-over UI from rendering.
+    if (address && finalScore > 0 && isNewBestScore({ wallet: address, score: finalScore })) {
+      setScoreError(null);
+      const t = setTimeout(() => setShowScorePrompt(true), 600);
+      // Don't return cleanup here — we also want the legendary modal effect below.
+      void t;
+    }
+
     if (unlocked) {
       const t = setTimeout(() => setShowLegendaryModal(true), 450);
       return () => clearTimeout(t);
     }
   }, [gameOver, address]);
+
+  // Handler invoked when the player presses "Record Score" in the prompt.
+  const handleRecordScore = useCallback(async () => {
+    if (!address) return;
+    const finalScore = scoreRef.current;
+    setScoreStatus("recording");
+    setScoreError(null);
+    const outcome = await recordBestScore({
+      wallet: address,
+      score: finalScore,
+      bestTier: bestTierRef.current,
+      legendaryUnlocked: legendaryRef.current,
+    });
+    if (outcome.ok) {
+      setScoreRecord(outcome.record);
+      setScoreStatus("synced");
+      setShowScorePrompt(false);
+    } else {
+      setScoreStatus("failed");
+      setScoreError(outcome.message);
+    }
+  }, [address]);
 
   useEffect(() => {
     const prevent = (e: KeyboardEvent) => {
@@ -317,6 +370,16 @@ export function CoinMergeGame() {
         bestTier={overallBestTier}
       />
 
+      {/* Lightweight Ritual best-score recording status. */}
+      <RitualScoreCard
+        wallet={address}
+        record={scoreRecord}
+        status={scoreStatus}
+        errorMessage={scoreError}
+      />
+
+
+
       <Leaderboard
         currentWallet={address}
         refreshKey={lbRefresh}
@@ -330,6 +393,18 @@ export function CoinMergeGame() {
           restart();
         }}
         onDismiss={() => setShowLegendaryModal(false)}
+      />
+
+      <RitualScorePrompt
+        open={showScorePrompt}
+        score={scoreRef.current}
+        pending={scoreStatus === "recording"}
+        errorMessage={scoreError}
+        onConfirm={handleRecordScore}
+        onDismiss={() => {
+          if (scoreStatus === "recording") return;
+          setShowScorePrompt(false);
+        }}
       />
     </div>
   );
