@@ -1,4 +1,4 @@
-import { Sparkles, Flame } from "lucide-react";
+import { Sparkles, Flame, Calendar } from "lucide-react";
 import { shortenAddress } from "@/hooks/useWallet";
 import { tierName } from "@/lib/gsiggy";
 
@@ -7,13 +7,15 @@ interface Props {
   bestScore: number;
   bestTier: number;
   eligible: boolean;
-  // Today's leaderboard standing for this wallet (null = no entry yet).
   dailyRank?: number | null;
   dailyScore?: number | null;
+  streak?: number;
+  unlockedAt?: string | null;
+  challengesDone?: number;
+  challengesTotal?: number;
 }
 
-// Connected-player profile snapshot: identity, best stats, and Ritual status.
-// Achievement detail lives in AchievementsCard; this card is the summary.
+// Connected-player dashboard: identity + best stats + Ritual status + streak.
 export function ProfileCard({
   address,
   bestScore,
@@ -21,7 +23,19 @@ export function ProfileCard({
   eligible,
   dailyRank,
   dailyScore,
+  streak = 0,
+  unlockedAt,
+  challengesDone = 0,
+  challengesTotal = 0,
 }: Props) {
+  const unlockedDate = unlockedAt
+    ? new Date(unlockedAt).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : null;
+
   return (
     <section className={`profile ${eligible ? "profile--legend" : ""}`}>
       <header className="profile__head">
@@ -36,6 +50,12 @@ export function ProfileCard({
           <span className="profile__badge profile__badge--muted">
             <Flame size={11} />
             Climber
+          </span>
+        )}
+        {streak > 0 && (
+          <span className="profile__streak" title={`${streak}-day streak`}>
+            <Flame size={11} />
+            {streak}d
           </span>
         )}
       </header>
@@ -59,6 +79,20 @@ export function ProfileCard({
           </span>
         </div>
         <div className="profile__stat">
+          <span className="profile__stat-label">Streak</span>
+          <span className="profile__stat-value">
+            {streak > 0 ? `${streak} day${streak === 1 ? "" : "s"}` : "—"}
+          </span>
+        </div>
+        <div className="profile__stat">
+          <span className="profile__stat-label">Daily challenge</span>
+          <span className="profile__stat-value">
+            {challengesTotal > 0
+              ? `${challengesDone}/${challengesTotal}`
+              : "—"}
+          </span>
+        </div>
+        <div className="profile__stat">
           <span className="profile__stat-label">gSiggy</span>
           <span
             className={`profile__stat-value ${eligible ? "is-eligible" : "is-locked"}`}
@@ -72,6 +106,12 @@ export function ProfileCard({
             className={`profile__stat-value ${eligible ? "is-eligible" : "is-locked"}`}
           >
             {eligible ? "LEGENDARY unlocked" : "Reach LEGENDARY to unlock"}
+            {eligible && unlockedDate && (
+              <span className="profile__stat-sub">
+                {" "}
+                · <Calendar size={9} style={{ display: "inline" }} /> {unlockedDate}
+              </span>
+            )}
           </span>
         </div>
       </div>

@@ -21,6 +21,8 @@ import { RitualScoreCard } from "./RitualScoreCard";
 import { RitualScorePrompt } from "./RitualScorePrompt";
 import { ProgressionPath } from "./ProgressionPath";
 import { AchievementsCard } from "./AchievementsCard";
+import { DailyChallengesCard } from "./DailyChallengesCard";
+import { MotivationBanner } from "./MotivationBanner";
 import {
   isNewBestScore,
   loadRecordedScore,
@@ -39,6 +41,13 @@ import {
   saveAchievementState,
   type AchievementState,
 } from "@/lib/achievements";
+import {
+  dailyChallenges,
+  evaluateRun,
+  loadProgress,
+  type ChallengeProgress,
+} from "@/lib/challenges";
+import { fetchStreak } from "@/lib/streak";
 import { useWallet } from "@/hooks/useWallet";
 
 const BEST_KEY = "coin-merge-best";
@@ -80,6 +89,15 @@ export function CoinMergeGame() {
   const [scoreError, setScoreError] = useState<string | null>(null);
   const [showScorePrompt, setShowScorePrompt] = useState(false);
 
+  // Daily streak (in days) for the connected wallet.
+  const [streak, setStreak] = useState(0);
+  // Daily challenge progress (per-wallet, per-UTC-day).
+  const [challengeProgress, setChallengeProgress] = useState<ChallengeProgress>(
+    () => loadProgress(null),
+  );
+  // Last challenge id newly completed this run (for celebrate animation).
+  const [justCompleted, setJustCompleted] = useState<string | null>(null);
+
   const { address } = useWallet();
   // Latest values in refs so the game-over effect doesn't re-fire on score changes.
   const scoreRef = useRef(0);
@@ -98,6 +116,9 @@ export function CoinMergeGame() {
   // profile + achievement state + today's standing so everything survives refresh.
   useEffect(() => {
     setAch(loadAchievementState(address));
+    // Restore today's challenge progress for this wallet (auto-resets on new UTC day).
+    setChallengeProgress(loadProgress(address));
+    setJustCompleted(null);
     // Restore any previously recorded Ritual score for this wallet.
     const persisted = loadRecordedScore(address);
     setScoreRecord(persisted);
@@ -115,6 +136,7 @@ export function CoinMergeGame() {
         unlocked_at: null,
       });
       setDailyStanding(null);
+      setStreak(0);
       return;
     }
     let cancelled = false;
@@ -124,6 +146,9 @@ export function CoinMergeGame() {
     fetchPlayerDailyStanding(address).then((s) => {
       if (cancelled) return;
       setDailyStanding(s);
+    });
+    fetchStreak(address).then((n) => {
+      if (!cancelled) setStreak(n);
     });
     return () => {
       cancelled = true;
@@ -239,6 +264,22 @@ export function CoinMergeGame() {
       }));
     }
 
+    // Evaluate daily challenges against this run. Pure local logic — no
+    // network calls. Updates progress + history; surfaces a celebrate
+    // animation on the latest completed challenge.
+    const yesterdayBest = profile?.best_score ?? 0;
+    const completed = evaluateRun(address, {
+      score: finalScore,
+      bestTier: finalTier,
+      yesterdayBest,
+    });
+    setChallengeProgress(loadProgress(address));
+    if (completed.length > 0) {
+      setJustCompleted(completed[completed.length - 1]);
+      // Refresh streak — playing today keeps it alive.
+      if (address) fetchStreak(address).then(setStreak);
+    }
+
     // Lightweight Ritual score prompt: only if connected + score strictly
     // beats the player's previously recorded best. Runs asynchronously so it
     // never blocks the game-over UI from rendering.
@@ -341,6 +382,17 @@ export function CoinMergeGame() {
         <p className="game-help">Swipe on mobile · arrow keys on desktop</p>
       </div>
 
+      {/* Motivational nudge — chooses message based on player state. */}
+      <MotivationBanner
+        eligible={isEligible}
+        bestTier={overallBestTier}
+        streak={streak}
+        challengesDone={
+          dailyChallenges().filter((c) => challengeProgress.completed[c.id]).length
+        }
+        challengesTotal={dailyChallenges().length}
+      />
+
       {/* Connected player's profile: identity + best stats + Ritual status. */}
       {address && profile && (
         <ProfileCard
@@ -350,8 +402,20 @@ export function CoinMergeGame() {
           eligible={isEligible}
           dailyRank={dailyStanding?.rank ?? null}
           dailyScore={dailyStanding?.score ?? null}
+          streak={streak}
+          unlockedAt={profile.unlocked_at}
+          challengesDone={
+            dailyChallenges().filter((c) => challengeProgress.completed[c.id]).length
+          }
+          challengesTotal={dailyChallenges().length}
         />
       )}
+
+      {/* Daily Ritual challenges — auto-rotated per UTC day. */}
+      <DailyChallengesCard
+        progress={challengeProgress}
+        justCompleted={justCompleted}
+      />
 
       {/* Visual milestone path — visible to everyone. */}
       <ProgressionPath bestTier={overallBestTier} />
@@ -359,8 +423,8 @@ export function CoinMergeGame() {
       {/* Achievement grid — derived from bestTier + persisted flags. */}
       <AchievementsCard bestTier={overallBestTier} state={ach} />
 
-      {/* gSiggy eligibility card — visible to everyone. */}
-      <GsiggyCard eligible={isEligible} />
+      {/* gSiggy eligibility / holder card. */}
+      <GsiggyCard eligible={isEligible} unlockedAt={profile?.unlocked_at ?? null} />
 
       {/* Ritual testnet status — only rendered for eligible players. */}
       <RitualCard
