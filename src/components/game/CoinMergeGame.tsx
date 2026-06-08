@@ -136,6 +136,7 @@ export function CoinMergeGame() {
         unlocked_at: null,
       });
       setDailyStanding(null);
+      setStreak(0);
       return;
     }
     let cancelled = false;
@@ -145,6 +146,9 @@ export function CoinMergeGame() {
     fetchPlayerDailyStanding(address).then((s) => {
       if (cancelled) return;
       setDailyStanding(s);
+    });
+    fetchStreak(address).then((n) => {
+      if (!cancelled) setStreak(n);
     });
     return () => {
       cancelled = true;
