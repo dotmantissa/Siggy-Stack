@@ -21,6 +21,8 @@ import { RitualScoreCard } from "./RitualScoreCard";
 import { RitualScorePrompt } from "./RitualScorePrompt";
 import { ProgressionPath } from "./ProgressionPath";
 import { AchievementsCard } from "./AchievementsCard";
+import { DailyChallengesCard } from "./DailyChallengesCard";
+import { MotivationBanner } from "./MotivationBanner";
 import {
   isNewBestScore,
   loadRecordedScore,
@@ -39,6 +41,13 @@ import {
   saveAchievementState,
   type AchievementState,
 } from "@/lib/achievements";
+import {
+  dailyChallenges,
+  evaluateRun,
+  loadProgress,
+  type ChallengeProgress,
+} from "@/lib/challenges";
+import { fetchStreak } from "@/lib/streak";
 import { useWallet } from "@/hooks/useWallet";
 
 const BEST_KEY = "coin-merge-best";
