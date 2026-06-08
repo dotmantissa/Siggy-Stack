@@ -382,6 +382,17 @@ export function CoinMergeGame() {
         <p className="game-help">Swipe on mobile · arrow keys on desktop</p>
       </div>
 
+      {/* Motivational nudge — chooses message based on player state. */}
+      <MotivationBanner
+        eligible={isEligible}
+        bestTier={overallBestTier}
+        streak={streak}
+        challengesDone={
+          dailyChallenges().filter((c) => challengeProgress.completed[c.id]).length
+        }
+        challengesTotal={dailyChallenges().length}
+      />
+
       {/* Connected player's profile: identity + best stats + Ritual status. */}
       {address && profile && (
         <ProfileCard
@@ -391,8 +402,20 @@ export function CoinMergeGame() {
           eligible={isEligible}
           dailyRank={dailyStanding?.rank ?? null}
           dailyScore={dailyStanding?.score ?? null}
+          streak={streak}
+          unlockedAt={profile.unlocked_at}
+          challengesDone={
+            dailyChallenges().filter((c) => challengeProgress.completed[c.id]).length
+          }
+          challengesTotal={dailyChallenges().length}
         />
       )}
+
+      {/* Daily Ritual challenges — auto-rotated per UTC day. */}
+      <DailyChallengesCard
+        progress={challengeProgress}
+        justCompleted={justCompleted}
+      />
 
       {/* Visual milestone path — visible to everyone. */}
       <ProgressionPath bestTier={overallBestTier} />
@@ -400,8 +423,8 @@ export function CoinMergeGame() {
       {/* Achievement grid — derived from bestTier + persisted flags. */}
       <AchievementsCard bestTier={overallBestTier} state={ach} />
 
-      {/* gSiggy eligibility card — visible to everyone. */}
-      <GsiggyCard eligible={isEligible} />
+      {/* gSiggy eligibility / holder card. */}
+      <GsiggyCard eligible={isEligible} unlockedAt={profile?.unlocked_at ?? null} />
 
       {/* Ritual testnet status — only rendered for eligible players. */}
       <RitualCard
