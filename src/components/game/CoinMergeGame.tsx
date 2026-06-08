@@ -116,6 +116,9 @@ export function CoinMergeGame() {
   // profile + achievement state + today's standing so everything survives refresh.
   useEffect(() => {
     setAch(loadAchievementState(address));
+    // Restore today's challenge progress for this wallet (auto-resets on new UTC day).
+    setChallengeProgress(loadProgress(address));
+    setJustCompleted(null);
     // Restore any previously recorded Ritual score for this wallet.
     const persisted = loadRecordedScore(address);
     setScoreRecord(persisted);
