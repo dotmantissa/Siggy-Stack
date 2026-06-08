@@ -89,6 +89,15 @@ export function CoinMergeGame() {
   const [scoreError, setScoreError] = useState<string | null>(null);
   const [showScorePrompt, setShowScorePrompt] = useState(false);
 
+  // Daily streak (in days) for the connected wallet.
+  const [streak, setStreak] = useState(0);
+  // Daily challenge progress (per-wallet, per-UTC-day).
+  const [challengeProgress, setChallengeProgress] = useState<ChallengeProgress>(
+    () => loadProgress(null),
+  );
+  // Last challenge id newly completed this run (for celebrate animation).
+  const [justCompleted, setJustCompleted] = useState<string | null>(null);
+
   const { address } = useWallet();
   // Latest values in refs so the game-over effect doesn't re-fire on score changes.
   const scoreRef = useRef(0);
