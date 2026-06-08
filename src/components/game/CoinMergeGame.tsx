@@ -264,6 +264,22 @@ export function CoinMergeGame() {
       }));
     }
 
+    // Evaluate daily challenges against this run. Pure local logic — no
+    // network calls. Updates progress + history; surfaces a celebrate
+    // animation on the latest completed challenge.
+    const yesterdayBest = profile?.best_score ?? 0;
+    const completed = evaluateRun(address, {
+      score: finalScore,
+      bestTier: finalTier,
+      yesterdayBest,
+    });
+    setChallengeProgress(loadProgress(address));
+    if (completed.length > 0) {
+      setJustCompleted(completed[completed.length - 1]);
+      // Refresh streak — playing today keeps it alive.
+      if (address) fetchStreak(address).then(setStreak);
+    }
+
     // Lightweight Ritual score prompt: only if connected + score strictly
     // beats the player's previously recorded best. Runs asynchronously so it
     // never blocks the game-over UI from rendering.
