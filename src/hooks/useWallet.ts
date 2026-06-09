@@ -36,6 +36,20 @@ export function useWallet() {
   const [address, setAddress] = useState<string | null>(null);
   const [status, setStatus] = useState<WalletStatus>("idle");
   const [error, setError] = useState<string | null>(null);
+  // Tracks the last address we emitted `wallet_connected` for, so we don't
+  // double-fire when wallets emit `accountsChanged` after a fresh connect.
+  const lastTracked = useRef<string | null>(null);
+
+  // Helper: keep analytics emissions centralised so silent restore, manual
+  // connect, and `accountsChanged` all funnel through one path.
+  const setConnected = useCallback((addr: string, source: "restore" | "connect" | "switch") => {
+    setAddress(addr);
+    setStatus("connected");
+    if (lastTracked.current !== addr.toLowerCase()) {
+      lastTracked.current = addr.toLowerCase();
+      track("wallet_connected", { wallet: addr, source });
+    }
+  }, []);
 
   // Try to silently restore a previous session on mount (no popup).
   useEffect(() => {
@@ -48,15 +62,30 @@ export function useWallet() {
       .request({ method: "eth_accounts" })
       .then((accounts) => {
         const list = accounts as string[];
-        if (list && list.length > 0) {
-          setAddress(list[0]);
-          setStatus("connected");
-        }
+        if (list && list.length > 0) setConnected(list[0], "restore");
       })
       .catch(() => {
         /* ignore silent restore errors */
       });
-  }, []);
+  }, [setConnected]);
+
+  // Listen for account/chain changes from the wallet.
+  useEffect(() => {
+    const provider = getProvider();
+    if (!provider?.on) return;
+
+    const onAccountsChanged = (...args: unknown[]) => {
+      const accounts = args[0] as string[];
+      if (!accounts || accounts.length === 0) {
+        setAddress(null);
+        setStatus("idle");
+        lastTracked.current = null;
+        window.localStorage.removeItem(STORAGE_KEY);
+        track("wallet_disconnected", {});
+      } else {
+        setConnected(accounts[0], "switch");
+      }
+    };
 
   // Listen for account/chain changes from the wallet.
   useEffect(() => {
