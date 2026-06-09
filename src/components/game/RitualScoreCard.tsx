@@ -45,14 +45,7 @@ export function RitualScoreCard({ wallet, record, status, errorMessage }: Props)
       </dl>
 
       {record?.txHash && status === "synced" && (
-        <a
-          className="ritual__tx"
-          href={explorerTxUrl(record.txHash)}
-          target="_blank"
-          rel="noreferrer noopener"
-        >
-          View transaction <ExternalLink size={11} />
-        </a>
+        <ExplorerLink txHash={record.txHash} />
       )}
 
       {errorMessage ? (
