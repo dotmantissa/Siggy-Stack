@@ -1,6 +1,8 @@
 import { Sparkles, Flame, Calendar } from "lucide-react";
 import { shortenAddress } from "@/hooks/useWallet";
 import { tierName } from "@/lib/gsiggy";
+import type { RecordedAchievement, RecordedScore } from "@/lib/ritual";
+import { ExplorerLink } from "./ExplorerLink";
 
 interface Props {
   address: string;
@@ -13,6 +15,10 @@ interface Props {
   unlockedAt?: string | null;
   challengesDone?: number;
   challengesTotal?: number;
+  /** Last successful Ritual achievement record (for explorer link). */
+  achievementRecord?: RecordedAchievement | null;
+  /** Last successful Ritual score record (for explorer link). */
+  scoreRecord?: RecordedScore | null;
 }
 
 // Connected-player dashboard: identity + best stats + Ritual status + streak.
@@ -27,6 +33,8 @@ export function ProfileCard({
   unlockedAt,
   challengesDone = 0,
   challengesTotal = 0,
+  achievementRecord = null,
+  scoreRecord = null,
 }: Props) {
   const unlockedDate = unlockedAt
     ? new Date(unlockedAt).toLocaleDateString(undefined, {
