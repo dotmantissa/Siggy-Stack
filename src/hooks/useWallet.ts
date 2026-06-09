@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { track } from "@/lib/analytics";
 
 // Minimal EIP-1193 wallet hook.
 // Works with any injected browser wallet (MetaMask, Rabby, Coinbase, Trust, etc.)
@@ -35,6 +36,20 @@ export function useWallet() {
   const [address, setAddress] = useState<string | null>(null);
   const [status, setStatus] = useState<WalletStatus>("idle");
   const [error, setError] = useState<string | null>(null);
+  // Tracks the last address we emitted `wallet_connected` for, so we don't
+  // double-fire when wallets emit `accountsChanged` after a fresh connect.
+  const lastTracked = useRef<string | null>(null);
+
+  // Helper: keep analytics emissions centralised so silent restore, manual
+  // connect, and `accountsChanged` all funnel through one path.
+  const setConnected = useCallback((addr: string, source: "restore" | "connect" | "switch") => {
+    setAddress(addr);
+    setStatus("connected");
+    if (lastTracked.current !== addr.toLowerCase()) {
+      lastTracked.current = addr.toLowerCase();
+      track("wallet_connected", { wallet: addr, source });
+    }
+  }, []);
 
   // Try to silently restore a previous session on mount (no popup).
   useEffect(() => {
@@ -47,15 +62,12 @@ export function useWallet() {
       .request({ method: "eth_accounts" })
       .then((accounts) => {
         const list = accounts as string[];
-        if (list && list.length > 0) {
-          setAddress(list[0]);
-          setStatus("connected");
-        }
+        if (list && list.length > 0) setConnected(list[0], "restore");
       })
       .catch(() => {
         /* ignore silent restore errors */
       });
-  }, []);
+  }, [setConnected]);
 
   // Listen for account/chain changes from the wallet.
   useEffect(() => {
@@ -67,16 +79,17 @@ export function useWallet() {
       if (!accounts || accounts.length === 0) {
         setAddress(null);
         setStatus("idle");
+        lastTracked.current = null;
         window.localStorage.removeItem(STORAGE_KEY);
+        track("wallet_disconnected", {});
       } else {
-        setAddress(accounts[0]);
-        setStatus("connected");
+        setConnected(accounts[0], "switch");
       }
     };
 
     provider.on("accountsChanged", onAccountsChanged);
     return () => provider.removeListener?.("accountsChanged", onAccountsChanged);
-  }, []);
+  }, [setConnected]);
 
   const connect = useCallback(async () => {
     setError(null);
@@ -100,8 +113,7 @@ export function useWallet() {
         method: "eth_requestAccounts",
       })) as string[];
       if (accounts && accounts.length > 0) {
-        setAddress(accounts[0]);
-        setStatus("connected");
+        setConnected(accounts[0], "connect");
         window.localStorage.setItem(STORAGE_KEY, "1");
       } else {
         setStatus("idle");
@@ -117,14 +129,16 @@ export function useWallet() {
         setError(err?.message || "Failed to connect wallet.");
       }
     }
-  }, []);
+  }, [setConnected]);
 
   const disconnect = useCallback(() => {
     // Wallets don't expose a true "disconnect" — we just clear local session.
     setAddress(null);
     setStatus("idle");
     setError(null);
+    lastTracked.current = null;
     window.localStorage.removeItem(STORAGE_KEY);
+    track("wallet_disconnected", {});
   }, []);
 
   return { address, status, error, connect, disconnect };

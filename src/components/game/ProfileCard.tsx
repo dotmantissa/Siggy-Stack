@@ -1,6 +1,8 @@
 import { Sparkles, Flame, Calendar } from "lucide-react";
 import { shortenAddress } from "@/hooks/useWallet";
 import { tierName } from "@/lib/gsiggy";
+import type { RecordedAchievement, RecordedScore } from "@/lib/ritual";
+import { ExplorerLink } from "./ExplorerLink";
 
 interface Props {
   address: string;
@@ -13,6 +15,10 @@ interface Props {
   unlockedAt?: string | null;
   challengesDone?: number;
   challengesTotal?: number;
+  /** Last successful Ritual achievement record (for explorer link). */
+  achievementRecord?: RecordedAchievement | null;
+  /** Last successful Ritual score record (for explorer link). */
+  scoreRecord?: RecordedScore | null;
 }
 
 // Connected-player dashboard: identity + best stats + Ritual status + streak.
@@ -27,6 +33,8 @@ export function ProfileCard({
   unlockedAt,
   challengesDone = 0,
   challengesTotal = 0,
+  achievementRecord = null,
+  scoreRecord = null,
 }: Props) {
   const unlockedDate = unlockedAt
     ? new Date(unlockedAt).toLocaleDateString(undefined, {
@@ -115,6 +123,25 @@ export function ProfileCard({
           </span>
         </div>
       </div>
+
+      {(achievementRecord || scoreRecord) && (
+        <div className="profile__txs" aria-label="Ritual transactions">
+          {achievementRecord && (
+            <div className="profile__tx">
+              <span className="profile__tx-label">Last achievement</span>
+              <ExplorerLink txHash={achievementRecord.txHash} label="View on Ritual Explorer" />
+            </div>
+          )}
+          {scoreRecord && (
+            <div className="profile__tx">
+              <span className="profile__tx-label">
+                Last score · {scoreRecord.bestScore.toLocaleString()}
+              </span>
+              <ExplorerLink txHash={scoreRecord.txHash} label="View on Ritual Explorer" />
+            </div>
+          )}
+        </div>
+      )}
     </section>
   );
 }

@@ -1657,3 +1657,42 @@
   font-weight: 700;
   color: oklch(0.85 0.14 50);
 }
+
+/* ============ Profile: Ritual transaction links ============ */
+.profile__txs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px dashed color-mix(in oklab, var(--foreground) 12%, transparent);
+}
+.profile__tx {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.72rem;
+}
+.profile__tx-label {
+  color: color-mix(in oklab, var(--foreground) 65%, transparent);
+  font-weight: 500;
+}
+
+/* Reusable explorer button variant (used when not in a Ritual card). */
+.explorer-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.7rem;
+  border-radius: 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: color-mix(in oklab, var(--ritual-green, var(--primary)) 14%, transparent);
+  color: var(--ritual-green, var(--primary));
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+.explorer-btn:hover {
+  background: color-mix(in oklab, var(--ritual-green, var(--primary)) 22%, transparent);
+}

@@ -1,18 +1,20 @@
 import { useEffect, useState } from "react";
-import { CheckCircle2, ExternalLink, Loader2, Sparkles, X } from "lucide-react";
+import { CheckCircle2, Loader2, Sparkles, X } from "lucide-react";
 import {
   RITUAL_NETWORK_NAME,
-  explorerTxUrl,
   loadRecorded,
   recordLegendaryAchievement,
   type RecordedAchievement,
 } from "@/lib/ritual";
+import { track } from "@/lib/analytics";
+import { ExplorerLink } from "./ExplorerLink";
 
 interface Props {
   eligible: boolean;
   wallet: string | null;
   bestScore: number;
   bestTier: number;
+  onRecorded?: (record: RecordedAchievement) => void;
 }
 
 /**
@@ -22,7 +24,7 @@ interface Props {
  * The actual onchain interaction is delegated to `recordLegendaryAchievement`
  * (see src/lib/ritual/) — this component only owns UI state.
  */
-export function RitualCard({ eligible, wallet, bestScore, bestTier }: Props) {
+export function RitualCard({ eligible, wallet, bestScore, bestTier, onRecorded }: Props) {
   // null = idle, "pending" = wallet prompt open, string = error message
   const [state, setState] = useState<"idle" | "pending" | { error: string }>("idle");
   const [recorded, setRecorded] = useState<RecordedAchievement | null>(null);
@@ -52,6 +54,12 @@ export function RitualCard({ eligible, wallet, bestScore, bestTier }: Props) {
       setRecorded(outcome.record);
       setState("idle");
       setShowSuccess(true);
+      track("achievement_recorded", {
+        tx: outcome.record.txHash,
+        wallet,
+        best_score: bestScore,
+      });
+      onRecorded?.(outcome.record);
     } else {
       setState({ error: outcome.message });
     }
@@ -105,15 +113,9 @@ export function RitualCard({ eligible, wallet, bestScore, bestTier }: Props) {
         </button>
 
         {alreadyRecorded && recorded?.txHash && (
-          <a
-            className="ritual__tx"
-            href={explorerTxUrl(recorded.txHash)}
-            target="_blank"
-            rel="noreferrer noopener"
-          >
-            View transaction <ExternalLink size={11} />
-          </a>
+          <ExplorerLink txHash={recorded.txHash} />
         )}
+
 
         {errorMessage ? (
           <p className="ritual__hint ritual__hint--error">{errorMessage}</p>
@@ -149,14 +151,7 @@ export function RitualCard({ eligible, wallet, bestScore, bestTier }: Props) {
             <p className="ritual-modal__text">
               Your Ritual Legendary achievement has been recorded.
             </p>
-            <a
-              className="ritual__tx"
-              href={explorerTxUrl(recorded.txHash)}
-              target="_blank"
-              rel="noreferrer noopener"
-            >
-              View transaction <ExternalLink size={11} />
-            </a>
+            <ExplorerLink txHash={recorded.txHash} />
             <div className="ritual-modal__actions">
               <button
                 className="ritual-modal__btn ritual-modal__btn--primary"

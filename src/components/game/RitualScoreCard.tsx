@@ -1,5 +1,6 @@
-import { CheckCircle2, ExternalLink, Loader2, Trophy } from "lucide-react";
-import { explorerTxUrl, type RecordedScore } from "@/lib/ritual";
+import { CheckCircle2, Loader2, Trophy } from "lucide-react";
+import { type RecordedScore } from "@/lib/ritual";
+import { ExplorerLink } from "./ExplorerLink";
 
 type Status = "not_recorded" | "recording" | "synced" | "failed";
 
@@ -44,14 +45,7 @@ export function RitualScoreCard({ wallet, record, status, errorMessage }: Props)
       </dl>
 
       {record?.txHash && status === "synced" && (
-        <a
-          className="ritual__tx"
-          href={explorerTxUrl(record.txHash)}
-          target="_blank"
-          rel="noreferrer noopener"
-        >
-          View transaction <ExternalLink size={11} />
-        </a>
+        <ExplorerLink txHash={record.txHash} />
       )}
 
       {errorMessage ? (
