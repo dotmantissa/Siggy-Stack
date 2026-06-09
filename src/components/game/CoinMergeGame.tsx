@@ -129,6 +129,8 @@ export function CoinMergeGame() {
     setScoreRecord(persisted);
     setScoreStatus(persisted ? "synced" : "not_recorded");
     setScoreError(null);
+    setAchievementRecord(loadRecorded(address));
+
 
     if (!address) {
       // Disconnected: show local-only eligibility so unconnected players
