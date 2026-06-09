@@ -191,6 +191,8 @@ export function CoinMergeGame() {
               if (ns > b) {
                 if (typeof window !== "undefined")
                   window.localStorage.setItem(BEST_KEY, String(ns));
+                // Only fire once per crossing (not on every additional point).
+                if (b > 0) track("new_high_score", { score: ns, wallet: address ?? null });
                 return ns;
               }
               return b;
@@ -203,14 +205,19 @@ export function CoinMergeGame() {
         // game.ts) so the pure game logic stays untouched. Gameplay
         // continues normally — eligibility is persisted at game over.
         let runMax = bestTierRef.current;
+        let unlockedNow = false;
         for (const row of next) {
           for (const tile of row) {
             if (tile) {
               if (tile.tier > runMax) runMax = tile.tier;
-              if (tile.tier === LEGENDARY_TIER) setHasUnlockedLegendary(true);
+              if (tile.tier === LEGENDARY_TIER && !legendaryRef.current) {
+                unlockedNow = true;
+                setHasUnlockedLegendary(true);
+              }
             }
           }
         }
+        if (unlockedNow) track("legendary_unlocked", { wallet: address ?? null });
         if (runMax !== bestTierRef.current) setBestTierThisRun(runMax);
 
         if (isGameOver(withSpawn)) setGameOver(true);
@@ -230,6 +237,12 @@ export function CoinMergeGame() {
     const finalScore = scoreRef.current;
     const finalTier = bestTierRef.current;
     const unlocked = legendaryRef.current;
+    track("game_ended", {
+      score: finalScore,
+      best_tier: finalTier,
+      legendary: unlocked,
+      wallet: address ?? null,
+    });
 
     if (address && finalScore > 0) {
       submitScore(address, finalScore).then(async () => {
@@ -315,6 +328,11 @@ export function CoinMergeGame() {
       setScoreRecord(outcome.record);
       setScoreStatus("synced");
       setShowScorePrompt(false);
+      track("score_recorded", {
+        tx: outcome.record.txHash,
+        score: outcome.record.bestScore,
+        wallet: address,
+      });
     } else {
       setScoreStatus("failed");
       setScoreError(outcome.message);
