@@ -434,6 +434,8 @@ export function CoinMergeGame() {
             dailyChallenges().filter((c) => challengeProgress.completed[c.id]).length
           }
           challengesTotal={dailyChallenges().length}
+          achievementRecord={achievementRecord}
+          scoreRecord={scoreRecord}
         />
       )}
 
@@ -458,6 +460,7 @@ export function CoinMergeGame() {
         wallet={address}
         bestScore={overallBestScore}
         bestTier={overallBestTier}
+        onRecorded={setAchievementRecord}
       />
 
       {/* Lightweight Ritual best-score recording status. */}
