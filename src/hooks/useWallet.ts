@@ -87,26 +87,9 @@ export function useWallet() {
       }
     };
 
-  // Listen for account/chain changes from the wallet.
-  useEffect(() => {
-    const provider = getProvider();
-    if (!provider?.on) return;
-
-    const onAccountsChanged = (...args: unknown[]) => {
-      const accounts = args[0] as string[];
-      if (!accounts || accounts.length === 0) {
-        setAddress(null);
-        setStatus("idle");
-        window.localStorage.removeItem(STORAGE_KEY);
-      } else {
-        setAddress(accounts[0]);
-        setStatus("connected");
-      }
-    };
-
     provider.on("accountsChanged", onAccountsChanged);
     return () => provider.removeListener?.("accountsChanged", onAccountsChanged);
-  }, []);
+  }, [setConnected]);
 
   const connect = useCallback(async () => {
     setError(null);
@@ -130,8 +113,7 @@ export function useWallet() {
         method: "eth_requestAccounts",
       })) as string[];
       if (accounts && accounts.length > 0) {
-        setAddress(accounts[0]);
-        setStatus("connected");
+        setConnected(accounts[0], "connect");
         window.localStorage.setItem(STORAGE_KEY, "1");
       } else {
         setStatus("idle");
@@ -147,14 +129,16 @@ export function useWallet() {
         setError(err?.message || "Failed to connect wallet.");
       }
     }
-  }, []);
+  }, [setConnected]);
 
   const disconnect = useCallback(() => {
     // Wallets don't expose a true "disconnect" — we just clear local session.
     setAddress(null);
     setStatus("idle");
     setError(null);
+    lastTracked.current = null;
     window.localStorage.removeItem(STORAGE_KEY);
+    track("wallet_disconnected", {});
   }, []);
 
   return { address, status, error, connect, disconnect };
