@@ -5,8 +5,10 @@
 
 export {
   RITUAL_NETWORK_NAME,
+  RITUAL_EXPLORER_URL,
   RITUAL_CHAIN,
   explorerTxUrl,
+  explorerAddressUrl,
 } from "./networkConfig";
 export {
   ensureRitualNetwork,
