@@ -17,6 +17,10 @@ const env = ((typeof import.meta !== "undefined" && import.meta.env) ||
 export const RITUAL_NETWORK_NAME =
   env.VITE_RITUAL_CHAIN_NAME || "Ritual Testnet";
 
+// Public Ritual block explorer. Used for "View on Ritual Explorer" links.
+export const RITUAL_EXPLORER_URL =
+  env.VITE_RITUAL_EXPLORER_URL || "https://explorer.ritualfoundation.org";
+
 // EIP-3085 chain params — used to add the chain to the wallet if missing.
 export const RITUAL_CHAIN = {
   chainId: env.VITE_RITUAL_CHAIN_ID || "0xaa36a7", // default: Sepolia placeholder
@@ -29,12 +33,15 @@ export const RITUAL_CHAIN = {
   rpcUrls: [
     env.VITE_RITUAL_RPC_URL || "https://ethereum-sepolia-rpc.publicnode.com",
   ],
-  blockExplorerUrls: [
-    env.VITE_RITUAL_EXPLORER_URL || "https://sepolia.etherscan.io",
-  ],
+  blockExplorerUrls: [RITUAL_EXPLORER_URL],
 } as const;
 
 export function explorerTxUrl(txHash: string): string {
-  const base = RITUAL_CHAIN.blockExplorerUrls[0].replace(/\/$/, "");
+  const base = RITUAL_EXPLORER_URL.replace(/\/$/, "");
   return `${base}/tx/${txHash}`;
+}
+
+export function explorerAddressUrl(address: string): string {
+  const base = RITUAL_EXPLORER_URL.replace(/\/$/, "");
+  return `${base}/address/${address}`;
 }
