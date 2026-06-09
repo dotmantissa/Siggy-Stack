@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { track } from "@/lib/analytics";
 
 // Minimal EIP-1193 wallet hook.
 // Works with any injected browser wallet (MetaMask, Rabby, Coinbase, Trust, etc.)
