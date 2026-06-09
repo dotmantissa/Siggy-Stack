@@ -123,6 +123,25 @@ export function ProfileCard({
           </span>
         </div>
       </div>
+
+      {(achievementRecord || scoreRecord) && (
+        <div className="profile__txs" aria-label="Ritual transactions">
+          {achievementRecord && (
+            <div className="profile__tx">
+              <span className="profile__tx-label">Last achievement</span>
+              <ExplorerLink txHash={achievementRecord.txHash} label="View on Ritual Explorer" />
+            </div>
+          )}
+          {scoreRecord && (
+            <div className="profile__tx">
+              <span className="profile__tx-label">
+                Last score · {scoreRecord.bestScore.toLocaleString()}
+              </span>
+              <ExplorerLink txHash={scoreRecord.txHash} label="View on Ritual Explorer" />
+            </div>
+          )}
+        </div>
+      )}
     </section>
   );
 }
