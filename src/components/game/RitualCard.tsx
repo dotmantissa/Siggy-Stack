@@ -1,18 +1,20 @@
 import { useEffect, useState } from "react";
-import { CheckCircle2, ExternalLink, Loader2, Sparkles, X } from "lucide-react";
+import { CheckCircle2, Loader2, Sparkles, X } from "lucide-react";
 import {
   RITUAL_NETWORK_NAME,
-  explorerTxUrl,
   loadRecorded,
   recordLegendaryAchievement,
   type RecordedAchievement,
 } from "@/lib/ritual";
+import { track } from "@/lib/analytics";
+import { ExplorerLink } from "./ExplorerLink";
 
 interface Props {
   eligible: boolean;
   wallet: string | null;
   bestScore: number;
   bestTier: number;
+  onRecorded?: (record: RecordedAchievement) => void;
 }
 
 /**
