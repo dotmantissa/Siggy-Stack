@@ -48,6 +48,8 @@ import {
   type ChallengeProgress,
 } from "@/lib/challenges";
 import { fetchStreak } from "@/lib/streak";
+import { track } from "@/lib/analytics";
+import { loadRecorded, type RecordedAchievement } from "@/lib/ritual";
 import { useWallet } from "@/hooks/useWallet";
 
 const BEST_KEY = "coin-merge-best";
@@ -162,7 +164,8 @@ export function CoinMergeGame() {
     setHasUnlockedLegendary(false);
     setShowLegendaryModal(false);
     setBestTierThisRun(0);
-  }, []);
+    track("game_started", { wallet: address ?? null });
+  }, [address]);
 
   const handleMove = useCallback(
     (dir: Direction) => {
