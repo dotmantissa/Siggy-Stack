@@ -90,6 +90,9 @@ export function CoinMergeGame() {
   >("not_recorded");
   const [scoreError, setScoreError] = useState<string | null>(null);
   const [showScorePrompt, setShowScorePrompt] = useState(false);
+  // Last recorded Legendary achievement (for profile + explorer link).
+  const [achievementRecord, setAchievementRecord] =
+    useState<RecordedAchievement | null>(null);
 
   // Daily streak (in days) for the connected wallet.
   const [streak, setStreak] = useState(0);
