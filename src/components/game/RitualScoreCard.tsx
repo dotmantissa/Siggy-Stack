@@ -1,5 +1,6 @@
-import { CheckCircle2, ExternalLink, Loader2, Trophy } from "lucide-react";
-import { explorerTxUrl, type RecordedScore } from "@/lib/ritual";
+import { CheckCircle2, Loader2, Trophy } from "lucide-react";
+import { type RecordedScore } from "@/lib/ritual";
+import { ExplorerLink } from "./ExplorerLink";
 
 type Status = "not_recorded" | "recording" | "synced" | "failed";
 
