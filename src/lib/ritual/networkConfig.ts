@@ -35,3 +35,8 @@ export function explorerAddressUrl(address: string): string {
   const base = RITUAL_EXPLORER_URL.replace(/\/$/, "");
   return `${base}/address/${address}`;
 }
+
+// Deployed SiggyAchievements contract — records player achievements on-chain.
+export const SIGGY_ACHIEVEMENTS_ADDRESS: `0x${string}` =
+  (env.VITE_SIGGY_ACHIEVEMENTS_ADDRESS as `0x${string}`) ||
+  "0xB74AB4b11871CD75a1CaD4F2CAa8E9F0De447F78";

@@ -3,20 +3,9 @@
 // Talks directly to the user's injected EIP-1193 wallet (MetaMask, Rabby…).
 // Responsibilities:
 //   - Ensure the wallet is on the Ritual chain (switch / add if needed).
-//   - Send a single transaction whose calldata carries our achievement JSON.
-//
-// Why a self-transaction with calldata?
-//   We don't have a deployed contract yet. The cheapest, contract-free way to
-//   leave a verifiable record on an EVM testnet is to send a 0-value tx from
-//   the user's address TO their own address, with the achievement payload
-//   encoded in the `data` field. Anyone can later inspect the tx and decode
-//   the JSON from calldata. This keeps the integration lightweight while
-//   still being a real onchain interaction.
-//
-// FUTURE: swap `to` for a real Ritual achievement contract address and
-// replace the raw JSON calldata with an ABI-encoded function call.
+//   - Send a transaction to SiggyAchievements.record(bytes) with the JSON payload.
 
-import { RITUAL_CHAIN } from "./networkConfig";
+import { RITUAL_CHAIN, SIGGY_ACHIEVEMENTS_ADDRESS } from "./networkConfig";
 
 type Eip1193Provider = {
   request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
@@ -42,11 +31,25 @@ export class RitualError extends Error {
   }
 }
 
-function toHex(str: string): string {
-  // UTF-8 → hex, prefixed with "0x" — the canonical EVM calldata format.
-  const bytes = new TextEncoder().encode(str);
+// ABI-encode a call to SiggyAchievements.record(bytes calldata data).
+// Selector: 0xe1112648 (keccak256("record(bytes)")[:4])
+// Layout:  selector(4) | offset(32) | length(32) | data(ceil(len/32)*32)
+function encodeRecordCall(jsonPayload: string): string {
+  const utf8 = new TextEncoder().encode(jsonPayload);
+  const len = utf8.length;
+  const paddedLen = Math.ceil(len / 32) * 32 || 32;
+  const buf = new Uint8Array(4 + 32 + 32 + paddedLen);
+  // selector
+  buf[0] = 0xe1; buf[1] = 0x11; buf[2] = 0x26; buf[3] = 0x48;
+  // offset = 0x20 (32)
+  buf[4 + 31] = 0x20;
+  // length
+  let l = len;
+  for (let i = 31; i >= 0; i--) { buf[4 + 32 + i] = l & 0xff; l >>= 8; }
+  // data
+  buf.set(utf8, 4 + 32 + 32);
   let hex = "0x";
-  for (const b of bytes) hex += b.toString(16).padStart(2, "0");
+  for (const b of buf) hex += b.toString(16).padStart(2, "0");
   return hex;
 }
 
@@ -108,7 +111,7 @@ export async function sendAchievementTx(
     throw new RitualError("no_wallet", "No wallet detected.");
   }
 
-  const data = toHex(JSON.stringify(payload));
+  const data = encodeRecordCall(JSON.stringify(payload));
 
   try {
     const txHash = (await provider.request({
@@ -116,7 +119,7 @@ export async function sendAchievementTx(
       params: [
         {
           from: wallet,
-          to: wallet, // self-tx; no contract needed
+          to: SIGGY_ACHIEVEMENTS_ADDRESS,
           value: "0x0",
           data,
         },
