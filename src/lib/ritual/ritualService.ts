@@ -113,6 +113,27 @@ export async function sendAchievementTx(
 
   const data = encodeRecordCall(JSON.stringify(payload));
 
+  // Ritual Chain rejects legacy (type-0) transactions. Fetch the base fee and
+  // build an explicit EIP-1559 (type-2) transaction so the wallet cannot fall
+  // back to the gasPrice field.
+  let maxFeePerGas = "0x77359401"; // 2 gwei fallback
+  try {
+    const block = (await provider.request({
+      method: "eth_getBlockByNumber",
+      params: ["latest", false],
+    })) as { baseFeePerGas?: string } | null;
+    if (block?.baseFeePerGas) {
+      // tip: 1 gwei; cap: 2× baseFee + tip
+      const tip = 1_000_000_000n;
+      const base = BigInt(block.baseFeePerGas);
+      const cap = base * 2n + tip;
+      maxFeePerGas = "0x" + cap.toString(16);
+    }
+  } catch {
+    /* use fallback */
+  }
+  const maxPriorityFeePerGas = "0x3b9aca00"; // 1 gwei
+
   try {
     const txHash = (await provider.request({
       method: "eth_sendTransaction",
@@ -122,6 +143,9 @@ export async function sendAchievementTx(
           to: SIGGY_ACHIEVEMENTS_ADDRESS,
           value: "0x0",
           data,
+          maxFeePerGas,
+          maxPriorityFeePerGas,
+          // Omit gasPrice entirely — presence of EIP-1559 fields forces type-2.
         },
       ],
     })) as string;
