@@ -139,13 +139,14 @@ export async function sendAchievementTx(
       method: "eth_sendTransaction",
       params: [
         {
+          type: "0x2", // EIP-1559 — explicit type prevents wallet from downgrading to legacy
           from: wallet,
           to: SIGGY_ACHIEVEMENTS_ADDRESS,
           value: "0x0",
           data,
           maxFeePerGas,
           maxPriorityFeePerGas,
-          // Omit gasPrice entirely — presence of EIP-1559 fields forces type-2.
+          chainId: "0x7BB", // 1979 — prevents cross-chain replay and locks type-2
         },
       ],
     })) as string;
