@@ -98,9 +98,57 @@ export async function ensureRitualNetwork(): Promise<void> {
   }
 }
 
+// Fetch EIP-1559 fee params directly from the Ritual RPC (bypasses wallet proxy).
+async function fetchEip1559Fees(): Promise<{ maxFeePerGas: string; maxPriorityFeePerGas: string }> {
+  const tip = 1_000_000_000n; // 1 gwei priority fee
+  const fallbackCap = "0x77359401"; // 2 gwei — used if RPC call fails
+  try {
+    const res = await fetch(RITUAL_CHAIN.rpcUrls[0], {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0", id: 1,
+        method: "eth_getBlockByNumber",
+        params: ["latest", false],
+      }),
+    });
+    const json = await res.json() as { result?: { baseFeePerGas?: string } };
+    const base = BigInt(json.result?.baseFeePerGas ?? "0x7");
+    const cap = base * 2n + tip;
+    return {
+      maxFeePerGas: "0x" + cap.toString(16),
+      maxPriorityFeePerGas: "0x" + tip.toString(16),
+    };
+  } catch {
+    return { maxFeePerGas: fallbackCap, maxPriorityFeePerGas: "0x3b9aca00" };
+  }
+}
+
+// Submit a raw signed transaction directly to the Ritual RPC, bypassing the wallet.
+async function sendRawToRitual(signedTx: string): Promise<string> {
+  const res = await fetch(RITUAL_CHAIN.rpcUrls[0], {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      jsonrpc: "2.0", id: 1,
+      method: "eth_sendRawTransaction",
+      params: [signedTx],
+    }),
+  });
+  const json = await res.json() as { result?: string; error?: { message: string } };
+  if (json.error) throw new Error(json.error.message);
+  if (!json.result) throw new Error("No transaction hash returned.");
+  return json.result;
+}
+
 /**
- * Send a single self-transaction carrying the achievement payload in calldata.
- * Returns the resulting transaction hash.
+ * Send the achievement payload to SiggyAchievements.record(bytes).
+ *
+ * Strategy (most → least reliable for Ritual Chain):
+ *   1. eth_signTransaction → eth_sendRawTransaction direct to RPC
+ *      Bypasses the wallet's gas-type inference entirely. Works in Rabby / Frame.
+ *   2. eth_sendTransaction with explicit EIP-1559 fields
+ *      Fallback for wallets (e.g. MetaMask) that removed eth_signTransaction.
  */
 export async function sendAchievementTx(
   wallet: string,
@@ -112,43 +160,41 @@ export async function sendAchievementTx(
   }
 
   const data = encodeRecordCall(JSON.stringify(payload));
+  const { maxFeePerGas, maxPriorityFeePerGas } = await fetchEip1559Fees();
 
-  // Ritual Chain rejects legacy (type-0) transactions. Fetch the base fee and
-  // build an explicit EIP-1559 (type-2) transaction so the wallet cannot fall
-  // back to the gasPrice field.
-  let maxFeePerGas = "0x77359401"; // 2 gwei fallback
+  const txParams = {
+    type: "0x2",
+    from: wallet,
+    to: SIGGY_ACHIEVEMENTS_ADDRESS,
+    value: "0x0",
+    data,
+    maxFeePerGas,
+    maxPriorityFeePerGas,
+    chainId: RITUAL_CHAIN.chainId,
+  };
+
+  // Path 1: sign without broadcasting, then submit raw bytes directly to the RPC.
+  // This bypasses wallet internals that may convert EIP-1559 → legacy.
   try {
-    const block = (await provider.request({
-      method: "eth_getBlockByNumber",
-      params: ["latest", false],
-    })) as { baseFeePerGas?: string } | null;
-    if (block?.baseFeePerGas) {
-      // tip: 1 gwei; cap: 2× baseFee + tip
-      const tip = 1_000_000_000n;
-      const base = BigInt(block.baseFeePerGas);
-      const cap = base * 2n + tip;
-      maxFeePerGas = "0x" + cap.toString(16);
+    const signedTx = (await provider.request({
+      method: "eth_signTransaction",
+      params: [txParams],
+    })) as string;
+    return await sendRawToRitual(signedTx);
+  } catch (signErr: unknown) {
+    const se = signErr as { code?: number; message?: string };
+    // User explicitly rejected — surface immediately, don't fall through.
+    if (se?.code === 4001) {
+      throw new RitualError("rejected", "You rejected the transaction.");
     }
-  } catch {
-    /* use fallback */
+    // Otherwise (e.g. MetaMask: "method not found") → fall through to Path 2.
   }
-  const maxPriorityFeePerGas = "0x3b9aca00"; // 1 gwei
 
+  // Path 2: eth_sendTransaction with explicit EIP-1559 fields.
   try {
     const txHash = (await provider.request({
       method: "eth_sendTransaction",
-      params: [
-        {
-          type: "0x2", // EIP-1559 — explicit type prevents wallet from downgrading to legacy
-          from: wallet,
-          to: SIGGY_ACHIEVEMENTS_ADDRESS,
-          value: "0x0",
-          data,
-          maxFeePerGas,
-          maxPriorityFeePerGas,
-          chainId: "0x7BB", // 1979 — prevents cross-chain replay and locks type-2
-        },
-      ],
+      params: [txParams],
     })) as string;
     return txHash;
   } catch (e: unknown) {
@@ -156,7 +202,6 @@ export async function sendAchievementTx(
     if (err?.code === 4001) {
       throw new RitualError("rejected", "You rejected the transaction.");
     }
-    // -32000 / -32603 etc. → generic failure (insufficient funds, RPC down…)
     throw new RitualError(
       "failed",
       err?.message || "The transaction could not be sent.",
